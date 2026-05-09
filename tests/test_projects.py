@@ -165,25 +165,25 @@ class TestProjectDelete:
 class TestProjectGitOps:
     """Tests for clone/pull/discover endpoints (mocked Git)."""
 
-    @patch("app.projects.routes.clone_repo", return_value="/data/repos/1")
-    def test_clone_project(self, mock_clone, client, login_as_admin, sample_project):
-        """Clone endpoint delegates to service."""
+    @patch("app.tasks.git_tasks.git_sync_project.delay")
+    def test_clone_project(self, mock_delay, client, login_as_admin, sample_project):
+        """Clone endpoint dispatches async Celery task."""
         resp = client.post(
             f"/projects/{sample_project.id}/clone",
             follow_redirects=False,
         )
         assert resp.status_code == 302
-        mock_clone.assert_called_once()
+        mock_delay.assert_called_once_with(sample_project.id, action="clone")
 
-    @patch("app.projects.routes.pull_repo", return_value="Already up to date.")
-    def test_pull_project(self, mock_pull, client, login_as_admin, sample_project):
-        """Pull endpoint delegates to service."""
+    @patch("app.tasks.git_tasks.git_sync_project.delay")
+    def test_pull_project(self, mock_delay, client, login_as_admin, sample_project):
+        """Pull endpoint dispatches async Celery task."""
         resp = client.post(
             f"/projects/{sample_project.id}/pull",
             follow_redirects=False,
         )
         assert resp.status_code == 302
-        mock_pull.assert_called_once()
+        mock_delay.assert_called_once_with(sample_project.id, action="pull")
 
     @patch("app.projects.routes.discover_suites", return_value=[])
     def test_discover_project(self, mock_discover, client, login_as_admin, sample_project):

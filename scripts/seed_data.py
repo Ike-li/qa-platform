@@ -90,6 +90,25 @@ def main():
         else:
             print("[seed] Daily cron schedule already exists, skipping.")
 
+        # ------------------------------------------------------------------
+        # 4. Allure report retention cron schedule (daily at 3:00 AM UTC)
+        # ------------------------------------------------------------------
+        retention_cron = CronSchedule.query.filter_by(
+            cron_expr="0 3 * * *",
+            suite_id=None,
+        ).first()
+        if retention_cron is None:
+            cron = CronSchedule(
+                project_id=project.id,
+                cron_expr="0 3 * * *",
+                is_active=True,
+            )
+            db.session.add(cron)
+            db.session.commit()
+            print(f"[seed] Created retention cron schedule (id={cron.id}, cron='0 3 * * *')")
+        else:
+            print("[seed] Retention cron schedule already exists, skipping.")
+
         print("\n[seed] Seed data complete.")
         print("       Login with: admin / admin123")
 

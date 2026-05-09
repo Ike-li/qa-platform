@@ -31,10 +31,10 @@ def run_cron_schedule(self, schedule_id: int) -> None:
             return
 
         # Create execution record
+        # Note: prepare_execution uses current_user which is anonymous in Celery context
         execution = prepare_execution(
             project_id=schedule.project_id,
             suite_id=schedule.suite_id,
-            triggered_by=None,  # System-triggered
             trigger_type=TriggerType.CRON,
         )
 

@@ -203,18 +203,10 @@ def pull_project(id: int):
     if not (project.owner_id == current_user.id or current_user.has_role(Role.SUPER_ADMIN)):
         abort(403)
 
-    try:
-        output = pull_repo(project)
-        log_audit(
-            "project.git.pull",
-            resource_type="project",
-            resource_id=project.id,
-        )
-        flash(f"Repository pulled successfully: {output[:200]}", "success")
-    except RuntimeError as exc:
-        logger.error("git pull failed for project %s: %s", project.id, exc)
-        flash(f"Pull failed: {exc}", "danger")
-
+    from app.tasks.git_tasks import git_sync_project
+    git_sync_project.delay(project.id, action="pull")
+    log_audit("project.git.pull", resource_type="project", resource_id=project.id)
+    flash("Repository pull started in the background. Refresh in a moment.", "info")
     return redirect(url_for("projects.detail_project", id=project.id))
 
 
@@ -262,16 +254,8 @@ def clone_project(id: int):
     if not (project.owner_id == current_user.id or current_user.has_role(Role.SUPER_ADMIN)):
         abort(403)
 
-    try:
-        clone_repo(project)
-        log_audit(
-            "project.git.clone",
-            resource_type="project",
-            resource_id=project.id,
-        )
-        flash("Repository cloned successfully.", "success")
-    except RuntimeError as exc:
-        logger.error("git clone failed for project %s: %s", project.id, exc)
-        flash(f"Clone failed: {exc}", "danger")
-
+    from app.tasks.git_tasks import git_sync_project
+    git_sync_project.delay(project.id, action="clone")
+    log_audit("project.git.clone", resource_type="project", resource_id=project.id)
+    flash("Repository clone started in the background. Refresh in a moment.", "info")
     return redirect(url_for("projects.detail_project", id=project.id))

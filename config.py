@@ -42,6 +42,11 @@ class BaseConfig:
     ALLURE_REPORTS_DIR = os.getenv("ALLURE_REPORTS_DIR", "/app/allure-reports")
     ALLURE_RESULTS_DIR = os.getenv("ALLURE_RESULTS_DIR", "/app/allure-results")
 
+    # Execution paths
+    EXECUTION_VENV_DIR = os.getenv("EXECUTION_VENV_DIR", "/data/venvs")
+    EXECUTION_RESULTS_DIR = os.getenv("EXECUTION_RESULTS_DIR", "/data/execution_results")
+    REPO_DIR = os.getenv("REPO_DIR", "/data/repos")
+
 
 class DevConfig(BaseConfig):
     """Development configuration."""

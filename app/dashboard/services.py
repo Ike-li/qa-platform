@@ -240,6 +240,139 @@ def get_recent_failures(project_id: int, limit: int = 20) -> list[dict]:
 
 
 # ------------------------------------------------------------------
+# Global overview (aggregate across all projects)
+# ------------------------------------------------------------------
+
+def get_global_overview() -> dict:
+    """Return aggregate metrics across all projects for the global dashboard.
+
+    Metrics returned:
+    - total_projects: count of all projects
+    - active_executions: count of running/pending executions
+    - recent_pass_rate: weighted pass rate over the last 7 days
+    - projects_with_failing_trends: projects whose latest 7-day pass rate
+      is below 80%
+    """
+    total_projects = Project.query.count()
+
+    active_executions = Execution.query.filter(
+        Execution.status.in_([
+            ExecutionStatus.PENDING,
+            ExecutionStatus.CLONED,
+            ExecutionStatus.RUNNING,
+            ExecutionStatus.EXECUTED,
+        ])
+    ).count()
+
+    # Recent pass rate (last 7 days) across all projects
+    end_date = date.today()
+    start_date = end_date - timedelta(days=6)
+
+    metric_rows = (
+        DashboardMetric.query
+        .filter(
+            DashboardMetric.date >= start_date,
+            DashboardMetric.date <= end_date,
+        )
+        .all()
+    )
+
+    if metric_rows:
+        total_pass = sum(r.pass_count for r in metric_rows)
+        total_fail = sum(r.fail_count for r in metric_rows)
+        total_skip = sum(r.skip_count for r in metric_rows)
+        total_error = sum(r.error_count for r in metric_rows)
+    else:
+        # Fallback: aggregate from test_results directly
+        start_dt = datetime.combine(start_date, datetime.min.time())
+        counts = (
+            db.session.query(
+                TestResult.status,
+                func.count(TestResult.id),
+            )
+            .join(Execution, Execution.id == TestResult.execution_id)
+            .filter(
+                Execution.created_at >= start_dt,
+                Execution.status == ExecutionStatus.COMPLETED,
+            )
+            .group_by(TestResult.status)
+            .all()
+        )
+        count_map = {status.value: cnt for status, cnt in counts}
+        total_pass = count_map.get("passed", 0)
+        total_fail = count_map.get("failed", 0)
+        total_skip = count_map.get("skipped", 0)
+        total_error = count_map.get("error", 0)
+
+    grand_total = total_pass + total_fail + total_skip + total_error
+    recent_pass_rate = (
+        round(total_pass / grand_total * 100, 1) if grand_total > 0 else 0.0
+    )
+
+    # Projects with failing trends (7-day pass rate < 80%)
+    failing_projects = []
+    if metric_rows:
+        project_rates: dict[int, list] = {}
+        for r in metric_rows:
+            project_rates.setdefault(r.project_id, []).append(r.pass_rate)
+        for pid, rates in project_rates.items():
+            avg_rate = sum(rates) / len(rates)
+            if avg_rate < 80:
+                failing_projects.append(pid)
+
+    return {
+        "total_projects": total_projects,
+        "active_executions": active_executions,
+        "recent_pass_rate": recent_pass_rate,
+        "total_tests_recent": grand_total,
+        "projects_with_failing_trends": failing_projects,
+    }
+
+
+def get_all_projects_health() -> list[dict]:
+    """Return each project's latest pass rate and last execution time.
+
+    Returns a list sorted by project name, each containing:
+    - id, name, latest_pass_rate, last_execution_at, last_execution_status
+    """
+    projects = Project.query.order_by(Project.name).all()
+    result = []
+
+    for p in projects:
+        # Latest DashboardMetric row for this project
+        latest_metric = (
+            DashboardMetric.query
+            .filter(DashboardMetric.project_id == p.id)
+            .order_by(DashboardMetric.date.desc())
+            .first()
+        )
+
+        # Most recent execution for this project
+        last_exec = (
+            Execution.query
+            .filter(Execution.project_id == p.id)
+            .order_by(Execution.created_at.desc())
+            .first()
+        )
+
+        result.append({
+            "id": p.id,
+            "name": p.name,
+            "latest_pass_rate": latest_metric.pass_rate if latest_metric else None,
+            "last_execution_at": (
+                last_exec.finished_at.isoformat()
+                if last_exec and last_exec.finished_at
+                else None
+            ),
+            "last_execution_status": (
+                last_exec.status.value if last_exec else None
+            ),
+        })
+
+    return result
+
+
+# ------------------------------------------------------------------
 # Daily metric aggregation (for Celery Beat)
 # ------------------------------------------------------------------
 

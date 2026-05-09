@@ -1,17 +1,43 @@
 """API endpoints for querying projects."""
 
-from flask import jsonify
+from flask import g, jsonify
 
-from app.api import api_bp
+from app.api import api_bp, rate_limit
 from app.api.auth import token_required
+from app.extensions import db
 from app.models.project import Project
+from app.models.project_membership import ProjectMembership
+from app.models.user import Role, User
+
+
+def _user_visible_project_ids(user: User) -> list[int] | None:
+    """Return project IDs the user may access, or None for SUPER_ADMIN (all)."""
+    if user.role == Role.SUPER_ADMIN:
+        return None
+
+    owned_ids = [p.id for p in user.projects.all()]
+    member_ids = [
+        m.project_id for m in ProjectMembership.query.filter_by(user_id=user.id).all()
+    ]
+    return list(set(owned_ids) | set(member_ids))
 
 
 @api_bp.route("/projects", methods=["GET"])
 @token_required
+@rate_limit
 def list_projects():
-    """Return all projects."""
-    projects = Project.query.order_by(Project.name).all()
+    """Return projects the authenticated user owns or is a member of.
+
+    SUPER_ADMIN users see all projects.
+    """
+    user = db.session.get(User, g.api_user_id)
+    visible_ids = _user_visible_project_ids(user)
+    query = Project.query.order_by(Project.name)
+    if visible_ids is not None:
+        if not visible_ids:
+            return jsonify({"projects": []})
+        query = query.filter(Project.id.in_(visible_ids))
+    projects = query.all()
     return jsonify({
         "projects": [
             {
@@ -28,9 +54,15 @@ def list_projects():
 
 @api_bp.route("/projects/<int:project_id>", methods=["GET"])
 @token_required
+@rate_limit
 def get_project(project_id: int):
     """Return detailed info for a single project including suites."""
-    project = Project.query.get(project_id)
+    user = db.session.get(User, g.api_user_id)
+    visible_ids = _user_visible_project_ids(user)
+    if visible_ids is not None and project_id not in visible_ids:
+        return jsonify({"error": "Project not found."}), 404
+
+    project = db.session.get(Project, project_id)
     if project is None:
         return jsonify({"error": "Project not found."}), 404
 

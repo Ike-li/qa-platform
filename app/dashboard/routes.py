@@ -5,6 +5,8 @@ from flask_login import current_user, login_required
 
 from app.dashboard import dashboard_bp
 from app.dashboard.services import (
+    get_all_projects_health,
+    get_global_overview,
     get_pass_rate_data,
     get_queue_status,
     get_recent_failures,
@@ -106,3 +108,16 @@ def api_failures():
 
     data = get_recent_failures(project_id, limit)
     return jsonify({"failures": data})
+
+
+# ------------------------------------------------------------------
+# JSON API: Global overview (all projects)
+# ------------------------------------------------------------------
+
+@dashboard_bp.route("/api/dashboard/overview")
+@login_required
+def api_global_overview():
+    """Return aggregate metrics across all projects."""
+    overview = get_global_overview()
+    projects = get_all_projects_health()
+    return jsonify({"overview": overview, "projects": projects})

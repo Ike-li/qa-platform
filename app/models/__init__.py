@@ -15,3 +15,5 @@ from app.models.execution import Execution, ExecutionStatus, TriggerType  # noqa
 from app.models.test_result import TestResult, TestResultStatus  # noqa: F401
 from app.models.allure_report import AllureReport  # noqa: F401
 from app.models.system_config import SystemConfig  # noqa: F401
+from app.models.cron_schedule import CronSchedule  # noqa: F401
+from app.models.project_membership import ProjectMembership, ProjectRole, PROJECT_ROLE_PERMISSIONS  # noqa: F401

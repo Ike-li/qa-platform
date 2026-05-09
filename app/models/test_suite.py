@@ -19,6 +19,11 @@ class TestSuite(db.Model):
     """A collection of test cases derived from a single test file in the repo."""
 
     __tablename__ = "test_suites"
+    __table_args__ = (
+        db.UniqueConstraint(
+            "project_id", "path_in_repo", name="uq_suite_project_path"
+        ),
+    )
 
     id = db.Column(db.Integer, primary_key=True)
     project_id = db.Column(

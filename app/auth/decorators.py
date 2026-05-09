@@ -63,3 +63,36 @@ def permission_required(resource: str, action: str):
         return wrapper
 
     return decorator
+
+
+def project_permission_required(permission: str):
+    """Restrict a view to users who hold *permission* within the URL's project.
+
+    Expects the view to receive a ``project_id`` or ``id`` keyword argument.
+    SUPER_ADMIN always passes.
+
+    Usage::
+
+        @project_permission_required("execution.trigger")
+        def trigger_execution(project_id):
+            ...
+    """
+
+    def decorator(f):
+        @functools.wraps(f)
+        def wrapper(*args, **kwargs):
+            if not current_user.is_authenticated:
+                flash("Please log in to access this page.", "warning")
+                return redirect(url_for("auth.login", next=request.url))
+
+            project_id = kwargs.get("project_id") or kwargs.get("id")
+            if project_id is None:
+                abort(400)
+
+            if not current_user.has_project_permission(permission, project_id):
+                abort(403)
+            return f(*args, **kwargs)
+
+        return wrapper
+
+    return decorator

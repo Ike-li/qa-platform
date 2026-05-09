@@ -1,5 +1,6 @@
 """Project model with Fernet-encrypted git credentials."""
 
+import os
 from datetime import datetime, timezone
 
 from cryptography.fernet import Fernet, InvalidToken
@@ -12,6 +13,7 @@ class Project(db.Model):
     """A QA project linked to a remote git repository."""
 
     __tablename__ = "projects"
+    __table_args__ = (db.UniqueConstraint("name", name="uq_project_name"),)
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(120), nullable=False, index=True)
@@ -22,6 +24,7 @@ class Project(db.Model):
     owner_id = db.Column(
         db.Integer, db.ForeignKey("users.id"), nullable=False, index=True
     )
+    sandbox_network = db.Column(db.Boolean, nullable=True, default=None)  # None = use system default
     created_at = db.Column(
         db.DateTime, default=lambda: datetime.now(timezone.utc), nullable=False
     )
@@ -91,7 +94,7 @@ class Project(db.Model):
     @property
     def repo_path(self) -> str:
         """Local filesystem path for the cloned repository."""
-        return f"/data/repos/{self.id}"
+        return os.path.join(current_app.config["REPO_DIR"], str(self.id))
 
     def __repr__(self) -> str:
         return f"<Project {self.name!r} id={self.id}>"

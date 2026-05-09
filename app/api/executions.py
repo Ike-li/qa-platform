@@ -1,13 +1,10 @@
 """API endpoint for triggering test executions."""
 
 import logging
-import os
-import time
 
 from flask import g, jsonify, request
-from redis import Redis
 
-from app.api import api_bp
+from app.api import api_bp, rate_limit
 from app.api.auth import token_required
 from app.extensions import db
 from app.models.execution import Execution, ExecutionStatus, TriggerType
@@ -16,42 +13,10 @@ from app.models.test_suite import TestSuite
 
 logger = logging.getLogger(__name__)
 
-# ------------------------------------------------------------------
-# Rate limiting via Redis sorted sets (sliding window)
-# ------------------------------------------------------------------
-
-REDIS_URL = os.getenv("CELERY_BROKER_URL", "redis://redis:6379/0")
-_redis = Redis.from_url(REDIS_URL)
-
-_RATE_LIMIT_MAX = 10       # max requests
-_RATE_LIMIT_WINDOW = 60    # per N seconds
-
-
-def _check_rate_limit(token_id: int) -> bool:
-    """Return ``True`` if the request is within the rate limit window."""
-    key = f"api_rate_limit:{token_id}"
-    now = time.time()
-    window_start = now - _RATE_LIMIT_WINDOW
-    try:
-        pipe = _redis.pipeline()
-        pipe.zremrangebyscore(key, 0, window_start)
-        pipe.zadd(key, {str(now): now})
-        pipe.zcard(key)
-        pipe.expire(key, _RATE_LIMIT_WINDOW)
-        results = pipe.execute()
-        current_count = results[2]
-        return current_count <= _RATE_LIMIT_MAX
-    except Exception:
-        logger.warning("Rate-limit check failed for token %d, allowing request", token_id)
-        return True
-
-
-# ------------------------------------------------------------------
-# POST /api/v1/executions
-# ------------------------------------------------------------------
 
 @api_bp.route("/executions", methods=["POST"])
 @token_required
+@rate_limit
 def create_execution():
     """Trigger a new test execution.
 
@@ -63,9 +28,6 @@ def create_execution():
             "extra_args": "-k foo"  // optional
         }
     """
-    if not _check_rate_limit(g.api_token.id):
-        return jsonify({"error": "Rate limit exceeded. Max 10 requests per minute."}), 429
-
     # RBAC permission check
     from app.models.user import User
     user = db.session.get(User, g.api_user_id)

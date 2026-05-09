@@ -19,6 +19,11 @@ class TestResult(db.Model):
     """One row per test function executed during a run."""
 
     __tablename__ = "test_results"
+    __table_args__ = (
+        db.UniqueConstraint(
+            "execution_id", "name", "file_path", name="uq_result_exec_name_file"
+        ),
+    )
 
     id = db.Column(db.Integer, primary_key=True)
 

@@ -8,6 +8,8 @@ Phase 4: notification dispatchers
 Phase 7: error classes and registration
 """
 
+from app.utils.git import build_clone_url  # noqa: F401
+
 from app.utils.errors import (  # noqa: F401
     AppError,
     BadRequestError,

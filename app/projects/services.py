@@ -1,6 +1,5 @@
 """Git operations and test-suite discovery for projects.
 
-All git operations run in a thread pool to avoid blocking the request cycle.
 Credentials are embedded in the URL and never written to logs.
 """
 
@@ -10,9 +9,7 @@ import os
 import re
 import shutil
 import subprocess
-from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-from urllib.parse import urlparse, urlunparse
 
 from app.extensions import db
 from app.models.project import Project
@@ -20,9 +17,6 @@ from app.models.test_case import TestCase
 from app.models.test_suite import TestSuite, TestType
 
 logger = logging.getLogger(__name__)
-
-# Shared thread pool for git operations (non-blocking)
-_executor = ThreadPoolExecutor(max_workers=4)
 
 # Patterns used during suite discovery
 _TEST_FILE_RE = re.compile(r"^test_.*\.py$", re.IGNORECASE)
@@ -39,21 +33,7 @@ _SUITE_TYPE_PATTERNS: list[tuple[re.Pattern, TestType]] = [
 # ------------------------------------------------------------------
 
 
-def _build_clone_url(git_url: str, credential: str | None) -> str:
-    """Embed *credential* into *git_url* for HTTPS authentication.
-
-    Returns the original URL when *credential* is ``None`` or the URL is not
-    HTTPS.
-    """
-    if not credential or not git_url.startswith("https://"):
-        return git_url
-
-    parsed = urlparse(git_url)
-    # Reconstruct: https://{token}@{host}{path}
-    netloc = f"{credential}@{parsed.hostname}"
-    if parsed.port:
-        netloc = f"{netloc}:{parsed.port}"
-    return urlunparse(parsed._replace(netloc=netloc))
+from app.utils.git import build_clone_url as _build_clone_url
 
 
 def _run_git(args: list[str], cwd: str, timeout: int = 300) -> subprocess.CompletedProcess:
@@ -201,26 +181,3 @@ def discover_suites(project: Project) -> list[TestSuite]:
 
     db.session.commit()
     return new_suites
-
-
-# ------------------------------------------------------------------
-# Async wrappers (run git ops in thread pool)
-# ------------------------------------------------------------------
-
-
-def clone_repo_async(project: Project) -> None:
-    """Schedule ``clone_repo`` in the background thread pool."""
-
-    def _task():
-        clone_repo(project)
-
-    _executor.submit(_task)
-
-
-def pull_repo_async(project: Project) -> None:
-    """Schedule ``pull_repo`` in the background thread pool."""
-
-    def _task():
-        pull_repo(project)
-
-    _executor.submit(_task)

@@ -31,6 +31,10 @@ def create_app(config_name=None):
     # Register blueprints
     _register_blueprints(app)
 
+    # Register OpenAPI / Swagger UI (flask-smorest)
+    from app.api.spec import init_spec
+    init_spec(app)
+
     # Register error handlers
     _register_error_handlers(app)
 
@@ -72,6 +76,7 @@ def _configure_celery(app):
                 return self.run(*args, **kwargs)
 
     celery.Task = FlaskTask
+    celery.autodiscover_tasks(["app.tasks"])
 
 
 def _configure_login(app):
@@ -95,7 +100,6 @@ def _register_blueprints(app):
     from app.executions import executions_bp
     from app.dashboard import dashboard_bp
     from app.notifications import notifications_bp
-    from app.api import api_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(admin_bp)
@@ -103,7 +107,7 @@ def _register_blueprints(app):
     app.register_blueprint(executions_bp)
     app.register_blueprint(dashboard_bp)
     app.register_blueprint(notifications_bp)
-    app.register_blueprint(api_bp)
+    # api_bp is registered via flask-smorest in init_spec()
 
 
 def _is_browser_request():

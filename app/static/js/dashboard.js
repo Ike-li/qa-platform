@@ -18,6 +18,7 @@
     // Current state
     let currentProjectId = null;
     let currentGranularity = "daily";
+    let showingGlobal = true;
 
     // -----------------------------------------------------------------------
     // Colour palette
@@ -78,15 +79,41 @@
     }
 
     /**
+     * Show a Bootstrap toast with the given message.
+     */
+    function showErrorToast(message) {
+        var container = document.getElementById("toastContainer");
+        if (!container) return;
+        var id = "errorToast-" + Date.now();
+        var html =
+            '<div id="' + id + '" class="toast align-items-center text-bg-danger border-0" role="alert">' +
+            '  <div class="d-flex">' +
+            '    <div class="toast-body">' + escapeHtml(message) + '</div>' +
+            '    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>' +
+            '  </div>' +
+            '</div>';
+        container.insertAdjacentHTML("beforeend", html);
+        var el = document.getElementById(id);
+        var toast = new bootstrap.Toast(el, { delay: 5000 });
+        toast.show();
+        el.addEventListener("hidden.bs.toast", function () { el.remove(); });
+    }
+
+    /**
      * Generic fetch wrapper that returns parsed JSON or null on error.
+     * Shows a Bootstrap toast when the request fails.
      */
     async function fetchJSON(url) {
         try {
             const resp = await fetch(url);
-            if (!resp.ok) return null;
+            if (!resp.ok) {
+                showErrorToast("Failed to load data (" + resp.status + ")");
+                return null;
+            }
             return await resp.json();
         } catch (err) {
             console.error("[dashboard] fetch error:", url, err);
+            showErrorToast("Network error while loading dashboard data");
             return null;
         }
     }
@@ -368,7 +395,129 @@
     }
 
     // -----------------------------------------------------------------------
-    // 5. Main orchestrator
+    // 5. Global overview
+    // -----------------------------------------------------------------------
+
+    /**
+     * Fetch global overview data and render summary cards + project health table.
+     */
+    async function loadGlobalOverview() {
+        setLoading(true);
+
+        var data = await fetchJSON("/dashboard/api/dashboard/overview");
+        if (!data) {
+            setLoading(false);
+            return;
+        }
+
+        var overview = data.overview || {};
+        var projects = data.projects || [];
+
+        // Update summary cards
+        var el;
+
+        el = document.getElementById("globalTotalProjects");
+        if (el) el.textContent = overview.total_projects !== undefined ? overview.total_projects : "--";
+
+        el = document.getElementById("globalActiveExec");
+        if (el) el.textContent = overview.active_executions !== undefined ? overview.active_executions : "--";
+
+        el = document.getElementById("globalPassRate");
+        if (el) {
+            if (overview.recent_pass_rate !== undefined) {
+                var rate = overview.recent_pass_rate;
+                el.textContent = rate + "%";
+                el.className = "fs-2 fw-bold " + (rate >= 80 ? "text-success" : rate >= 50 ? "text-warning" : "text-danger");
+            } else {
+                el.textContent = "--";
+            }
+        }
+
+        el = document.getElementById("globalFailingTrends");
+        if (el) {
+            var failingCount = (overview.projects_with_failing_trends || []).length;
+            el.textContent = failingCount;
+            el.className = "fs-2 fw-bold " + (failingCount === 0 ? "text-success" : "text-danger");
+        }
+
+        // Update project health table
+        var tbody = document.getElementById("globalProjectsBody");
+        if (tbody) {
+            if (projects.length === 0) {
+                tbody.innerHTML =
+                    '<tr><td colspan="5" class="text-center text-muted py-4">No projects found</td></tr>';
+            } else {
+                var html = "";
+                for (var i = 0; i < projects.length; i++) {
+                    var p = projects[i];
+                    html += "<tr>";
+
+                    // Project name
+                    html += "<td>" + escapeHtml(p.name || "--") + "</td>";
+
+                    // Pass rate with colour coding
+                    html += "<td>";
+                    if (p.latest_pass_rate !== null && p.latest_pass_rate !== undefined) {
+                        var prClass = p.latest_pass_rate >= 80 ? "text-success" : p.latest_pass_rate >= 50 ? "text-warning" : "text-danger";
+                        html += '<span class="fw-semibold ' + prClass + '">' + p.latest_pass_rate + "%</span>";
+                    } else {
+                        html += '<span class="text-muted">No data</span>';
+                    }
+                    html += "</td>";
+
+                    // Last execution time
+                    html += "<td>";
+                    if (p.last_execution_at) {
+                        var d = new Date(p.last_execution_at);
+                        html += '<span class="small">' + d.toLocaleDateString() + " " + d.toLocaleTimeString() + "</span>";
+                    } else {
+                        html += '<span class="text-muted">Never</span>';
+                    }
+                    html += "</td>";
+
+                    // Last execution status badge
+                    html += "<td>";
+                    if (p.last_execution_status) {
+                        var badgeClass = "bg-secondary";
+                        if (p.last_execution_status === "completed") badgeClass = "bg-success";
+                        else if (p.last_execution_status === "failed") badgeClass = "bg-danger";
+                        else if (p.last_execution_status === "running") badgeClass = "bg-primary";
+                        else if (p.last_execution_status === "pending") badgeClass = "bg-warning text-dark";
+                        html += '<span class="badge badge-status ' + badgeClass + '">' +
+                                escapeHtml(p.last_execution_status) + "</span>";
+                    } else {
+                        html += '<span class="text-muted">--</span>';
+                    }
+                    html += "</td>";
+
+                    // Action: select this project
+                    html += '<td><button class="btn btn-sm btn-outline-primary select-project-btn" data-project-id="' + p.id + '">' +
+                            '<i class="bi bi-arrow-right"></i></button></td>';
+
+                    html += "</tr>";
+                }
+                tbody.innerHTML = html;
+
+                // Attach click handlers for "select project" buttons
+                var selectBtns = tbody.querySelectorAll(".select-project-btn");
+                selectBtns.forEach(function (btn) {
+                    btn.addEventListener("click", function () {
+                        var pid = this.getAttribute("data-project-id");
+                        var projectSelect = document.getElementById("projectFilter");
+                        if (projectSelect && pid) {
+                            projectSelect.value = pid;
+                            projectSelect.dispatchEvent(new Event("change"));
+                        }
+                    });
+                });
+            }
+        }
+
+        setLoading(false);
+    }
+
+    // -----------------------------------------------------------------------
+    // 6. Main orchestrator
     // -----------------------------------------------------------------------
 
     /**
@@ -433,15 +582,23 @@
         if (projectSelect) {
             projectSelect.addEventListener("change", function () {
                 var pid = this.value;
+                var grid    = document.getElementById("dashboardGrid");
+                var globalEl = document.getElementById("globalOverview");
+
                 if (!pid) {
-                    // Hide grid, show placeholder
-                    var grid  = document.getElementById("dashboardGrid");
-                    var noMsg = document.getElementById("noProjectMsg");
-                    if (grid)  grid.style.display  = "none";
-                    if (noMsg) noMsg.style.display = "";
+                    // Show global overview, hide per-project dashboard
+                    if (grid)     grid.style.display     = "none";
+                    if (globalEl) globalEl.style.display  = "";
+                    showingGlobal = true;
                     stopQueueRefresh();
+                    loadGlobalOverview();
                     return;
                 }
+
+                // Show per-project dashboard, hide global overview
+                if (grid)     grid.style.display     = "";
+                if (globalEl) globalEl.style.display  = "none";
+                showingGlobal = false;
                 loadDashboard(pid);
                 startQueueRefresh();
             });
@@ -462,11 +619,16 @@
             });
         });
 
-        // --- Auto-select first project if only one exists ---
-        if (projectSelect && projectSelect.options.length === 2) {
-            projectSelect.selectedIndex = 1;
-            projectSelect.dispatchEvent(new Event("change"));
+        // --- Refresh global overview button ---
+        var refreshBtn = document.getElementById("refreshGlobalBtn");
+        if (refreshBtn) {
+            refreshBtn.addEventListener("click", function () {
+                loadGlobalOverview();
+            });
         }
+
+        // --- Load global overview on page load ---
+        loadGlobalOverview();
     });
 
     // -----------------------------------------------------------------------

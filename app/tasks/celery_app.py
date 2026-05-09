@@ -1,18 +1,16 @@
-import os
+"""Celery application entry point.
 
-from celery import Celery
+Imports and calls the Flask app factory so that _configure_celery applies
+FlaskTask to the canonical Celery instance in app.extensions. Then re-exports
+that single instance so docker-compose ``-A app.tasks.celery_app`` resolves
+to the same object used throughout the application.
+"""
 
-celery = Celery("qa_platform")
+from app import create_app  # noqa: F401 — triggers _configure_celery
 
-celery.conf.update(
-    broker_url=os.getenv("CELERY_BROKER_URL", "redis://redis:6379/0"),
-    result_backend=os.getenv("CELERY_RESULT_BACKEND", "redis://redis:6379/1"),
-    accept_content=["json"],
-    task_serializer="json",
-    result_serializer="json",
-    timezone="UTC",
-    enable_utc=True,
-    beat_schedule={},
-)
+# create_app() already called _configure_celery(app) which:
+# 1. Updates celery.conf from Flask config
+# 2. Sets celery.Task = FlaskTask (app context in every task)
+# 3. Calls celery.autodiscover_tasks(["app.tasks"])
 
-celery.autodiscover_tasks(["app.tasks"])
+from app.extensions import celery  # noqa: F401 — re-export the canonical instance

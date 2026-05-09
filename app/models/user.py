@@ -109,6 +109,29 @@ class User(UserMixin, db.Model):
         """Return True if the user's role grants *permission*."""
         return permission in ROLE_PERMISSIONS.get(self.role, set())
 
+    def has_project_permission(self, permission: str, project_id: int) -> bool:
+        """Check if user has a permission within a specific project.
+
+        Falls back to global role permissions for SUPER_ADMIN.
+        Project owner always has full access.
+        """
+        if self.role == Role.SUPER_ADMIN:
+            return True
+
+        from app.models.project_membership import ProjectMembership, PROJECT_ROLE_PERMISSIONS
+        membership = ProjectMembership.query.filter_by(
+            user_id=self.id, project_id=project_id,
+        ).first()
+
+        if membership is None:
+            from app.models.project import Project
+            project = db.session.get(Project, project_id)
+            if project and project.owner_id == self.id:
+                return True
+            return False
+
+        return permission in PROJECT_ROLE_PERMISSIONS.get(membership.role, set())
+
     def has_role(self, *roles) -> bool:
         """Return True if the user's role is in *roles*.
 
