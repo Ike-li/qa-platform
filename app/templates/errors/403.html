@@ -1,18 +1,18 @@
 {% extends "base.html" %}
 
-{% block title %}403 Forbidden - QA Platform{% endblock %}
+{% block title %}403 禁止访问 - QA Platform{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center mt-5">
     <div class="col-md-6 text-center">
         <h1 class="display-1 text-danger">403</h1>
-        <h3 class="mb-3">Forbidden</h3>
+        <h3 class="mb-3">禁止访问</h3>
         <p class="text-muted mb-4">
-            You do not have permission to access this resource.
-            Please contact an administrator if you believe this is an error.
+            您没有权限访问此资源。
+            如有疑问，请联系管理员。
         </p>
         <a href="{{ url_for('auth.profile') }}" class="btn btn-primary">
-            <i class="bi bi-house"></i> Go to Dashboard
+            <i class="bi bi-house"></i> 返回首页
         </a>
     </div>
 </div>

@@ -48,7 +48,7 @@ def rate_limit(f):
             results = pipe.execute()
             current_count = results[2]
             if current_count > _RATE_LIMIT_MAX:
-                return jsonify({"error": "Rate limit exceeded. Max 10 requests per minute."}), 429
+                return jsonify({"error": "请求频率超限，每分钟最多 10 次请求。"}), 429
         except Exception:
             from flask import current_app
             if current_app.config.get("TESTING"):
@@ -58,7 +58,7 @@ def rate_limit(f):
                     "Rate-limit check failed for token %d, denying request",
                     g.api_token.id,
                 )
-                return jsonify({"error": "Service temporarily unavailable."}), 503
+                return jsonify({"error": "服务暂时不可用，请稍后重试。"}), 503
         return f(*args, **kwargs)
 
     return decorated

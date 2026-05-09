@@ -4,7 +4,7 @@ import logging
 import os
 from urllib.parse import urlparse
 
-from flask import flash, g, redirect, render_template, request, url_for
+from flask import flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required, login_user, logout_user
 
 from app.auth import auth_bp
@@ -45,19 +45,19 @@ def login():
     # Rate limiting
     client_ip = request.remote_addr or "unknown"
     if not _check_login_rate_limit(client_ip):
-        flash("Too many login attempts. Please try again later.", "danger")
+        flash("登录尝试次数过多，请稍后再试。", "danger")
         return render_template("auth/login.html", form=LoginForm()), 429
 
     form = LoginForm()
     if form.validate_on_submit():
         user = User.query.filter_by(username=form.username.data).first()
         if user is None or not user.check_password(form.password.data):
-            flash("Invalid username or password.", "danger")
+            flash("用户名或密码错误。", "danger")
             log_audit("user.login.failed", resource_type="user", new_value={"username": form.username.data})
             return render_template("auth/login.html", form=form), 401
 
         if not user.is_active:
-            flash("Your account has been deactivated. Contact an administrator.", "warning")
+            flash("您的账号已被停用，请联系管理员。", "warning")
             log_audit("user.login.inactive", resource_type="user", resource_id=user.id)
             return render_template("auth/login.html", form=form), 403
 
@@ -87,7 +87,7 @@ def login():
 def logout():
     log_audit("user.logout", resource_type="user", resource_id=current_user.id)
     logout_user()
-    flash("You have been logged out.", "info")
+    flash("已成功退出登录。", "info")
     return redirect(url_for("auth.login"))
 
 
@@ -100,15 +100,15 @@ def profile():
         # Handle password change if requested
         if form.new_password.data:
             if not form.current_password.data:
-                flash("Current password is required to set a new password.", "danger")
+                flash("设置新密码时需要输入当前密码。", "danger")
                 return render_template("auth/profile.html", form=form)
 
             if not current_user.check_password(form.current_password.data):
-                flash("Current password is incorrect.", "danger")
+                flash("当前密码不正确。", "danger")
                 return render_template("auth/profile.html", form=form)
 
             current_user.set_password(form.new_password.data)
-            flash("Password updated successfully.", "success")
+            flash("密码更新成功。", "success")
             log_audit(
                 "user.password_change",
                 resource_type="user",
@@ -132,7 +132,7 @@ def profile():
         except Exception:
             db.session.rollback()
             raise
-        flash("Profile updated.", "success")
+        flash("个人资料已更新。", "success")
         return redirect(url_for("auth.profile"))
 
     return render_template("auth/profile.html", form=form)

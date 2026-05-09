@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}{% if editing %}Edit Project{% else %}New Project{% endif %} - QA Platform{% endblock %}
+{% block title %}{% if editing %}编辑项目{% else %}新建项目{% endif %} - QA Platform{% endblock %}
 
 {% block content %}
 <div class="row">
@@ -9,9 +9,9 @@
             <div class="card-header">
                 <h5 class="mb-0">
                     {% if editing %}
-                    <i class="bi bi-pencil"></i> Edit Project: {{ project.name }}
+                    <i class="bi bi-pencil"></i> 编辑项目：{{ project.name }}
                     {% else %}
-                    <i class="bi bi-folder-plus"></i> Create New Project
+                    <i class="bi bi-folder-plus"></i> 新建项目
                     {% endif %}
                 </h5>
             </div>
@@ -20,15 +20,15 @@
                     {{ form.hidden_tag() }}
 
                     <div class="mb-3">
-                        <label for="name" class="form-label">Project Name</label>
-                        {{ form.name(class="form-control", id="name", placeholder="e.g. My QA Project") }}
+                        <label for="name" class="form-label">项目名称</label>
+                        {{ form.name(class="form-control", id="name", placeholder="例如：我的QA项目") }}
                         {% for error in form.name.errors %}
                         <div class="text-danger small mt-1">{{ error }}</div>
                         {% endfor %}
                     </div>
 
                     <div class="mb-3">
-                        <label for="git_url" class="form-label">Git Repository URL</label>
+                        <label for="git_url" class="form-label">Git 仓库地址</label>
                         {{ form.git_url(class="form-control", id="git_url", placeholder="https://github.com/org/repo.git") }}
                         {% for error in form.git_url.errors %}
                         <div class="text-danger small mt-1">{{ error }}</div>
@@ -37,7 +37,7 @@
 
                     <div class="row mb-3">
                         <div class="col-md-6">
-                            <label for="git_branch" class="form-label">Branch</label>
+                            <label for="git_branch" class="form-label">分支</label>
                             {{ form.git_branch(class="form-control", id="git_branch", placeholder="main") }}
                             {% for error in form.git_branch.errors %}
                             <div class="text-danger small mt-1">{{ error }}</div>
@@ -45,24 +45,24 @@
                         </div>
                         <div class="col-md-6">
                             <label for="git_credential" class="form-label">
-                                Git Credential / Token
+                                Git 凭证 / Token
                                 {% if editing %}
-                                <small class="text-muted">(leave blank to keep current)</small>
+                                <small class="text-muted">（留空则保持当前值）</small>
                                 {% endif %}
                             </label>
-                            {{ form.git_credential(class="form-control", id="git_credential", placeholder="Personal access token") }}
+                            {{ form.git_credential(class="form-control", id="git_credential", placeholder="个人访问令牌") }}
                             {% for error in form.git_credential.errors %}
                             <div class="text-danger small mt-1">{{ error }}</div>
                             {% endfor %}
                             <div class="form-text">
-                                <i class="bi bi-lock"></i> Encrypted before storage. Never displayed after saving.
+                                <i class="bi bi-lock"></i> 存储前加密处理，保存后不再显示。
                             </div>
                         </div>
                     </div>
 
                     <div class="mb-3">
-                        <label for="description" class="form-label">Description</label>
-                        {{ form.description(class="form-control", id="description", rows="3", placeholder="Brief description of the project...") }}
+                        <label for="description" class="form-label">描述</label>
+                        {{ form.description(class="form-control", id="description", rows="3", placeholder="项目的简要描述...") }}
                         {% for error in form.description.errors %}
                         <div class="text-danger small mt-1">{{ error }}</div>
                         {% endfor %}
@@ -71,16 +71,16 @@
                     <div class="d-flex justify-content-between">
                         {% if editing %}
                         <a href="{{ url_for('projects.detail_project', id=project.id) }}" class="btn btn-outline-secondary">
-                            <i class="bi bi-arrow-left"></i> Back
+                            <i class="bi bi-arrow-left"></i> 返回
                         </a>
                         {% else %}
                         <a href="{{ url_for('projects.list_projects') }}" class="btn btn-outline-secondary">
-                            <i class="bi bi-arrow-left"></i> Back
+                            <i class="bi bi-arrow-left"></i> 返回
                         </a>
                         {% endif %}
                         <button type="submit" class="btn btn-primary">
                             <i class="bi bi-check-lg"></i>
-                            {% if editing %}Save Changes{% else %}Create Project{% endif %}
+                            {% if editing %}保存{% else %}创建项目{% endif %}
                         </button>
                     </div>
                 </form>
@@ -91,24 +91,23 @@
     <div class="col-lg-4">
         <div class="card shadow-sm">
             <div class="card-header">
-                <h6 class="mb-0"><i class="bi bi-info-circle"></i> Tips</h6>
+                <h6 class="mb-0"><i class="bi bi-info-circle"></i> 提示</h6>
             </div>
             <div class="card-body small">
                 <dl>
-                    <dt>Git URL</dt>
-                    <dd>HTTPS or SSH URL to the repository containing your test code.</dd>
-                    <dt>Branch</dt>
-                    <dd>The branch to clone and pull from. Defaults to <code>main</code>.</dd>
-                    <dt>Credential</dt>
+                    <dt>Git 地址</dt>
+                    <dd>包含测试代码的仓库的 HTTPS 或 SSH 地址。</dd>
+                    <dt>分支</dt>
+                    <dd>用于克隆和拉取的分支，默认为 <code>main</code>。</dd>
+                    <dt>凭证</dt>
                     <dd>
-                        A personal access token or password for HTTPS authentication.
-                        The credential is encrypted with Fernet before storage and is
-                        <strong>never</strong> displayed after saving.
+                        用于 HTTPS 认证的个人访问令牌或密码。
+                        凭证在存储前使用 Fernet 加密，保存后<strong>永远不会</strong>显示。
                     </dd>
-                    <dt>Suite Discovery</dt>
+                    <dt>套件发现</dt>
                     <dd>
-                        After creating a project, clone the repo and run
-                        <strong>Re-discover</strong> to scan for <code>test_*.py</code> files.
+                        创建项目后，克隆仓库并点击<strong>重新发现</strong>
+                        来扫描 <code>test_*.py</code> 文件。
                     </dd>
                 </dl>
             </div>

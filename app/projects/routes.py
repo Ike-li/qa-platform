@@ -11,7 +11,7 @@ from app.models.test_suite import TestSuite
 from app.models.user import Role
 from app.projects import projects_bp
 from app.projects.forms import ProjectForm
-from app.projects.services import clone_repo, discover_suites, pull_repo
+from app.projects.services import discover_suites
 from app.utils.audit import log_audit
 
 logger = logging.getLogger(__name__)
@@ -99,7 +99,7 @@ def create_project():
             resource_id=project.id,
             new_value={"name": project.name, "git_url": project.git_url},
         )
-        flash(f"Project '{project.name}' created.", "success")
+        flash(f"项目 '{project.name}' 创建成功。", "success")
         return redirect(url_for("projects.detail_project", id=project.id))
 
     return render_template("projects/form.html", form=form, editing=False)
@@ -153,7 +153,7 @@ def edit_project(id: int):
             old_value=old_values,
             new_value=new_values,
         )
-        flash(f"Project '{project.name}' updated.", "success")
+        flash(f"项目 '{project.name}' 更新成功。", "success")
         return redirect(url_for("projects.detail_project", id=project.id))
 
     return render_template("projects/form.html", form=form, editing=True, project=project)
@@ -187,7 +187,7 @@ def delete_project(id: int):
         resource_id=id,
         old_value=old_values,
     )
-    flash(f"Project '{project_name}' deleted.", "success")
+    flash(f"项目 '{project_name}' 已删除。", "success")
     return redirect(url_for("projects.list_projects"))
 
 
@@ -206,7 +206,7 @@ def pull_project(id: int):
     from app.tasks.git_tasks import git_sync_project
     git_sync_project.delay(project.id, action="pull")
     log_audit("project.git.pull", resource_type="project", resource_id=project.id)
-    flash("Repository pull started in the background. Refresh in a moment.", "info")
+    flash("仓库拉取已在后台启动，请稍后刷新页面。", "info")
     return redirect(url_for("projects.detail_project", id=project.id))
 
 
@@ -232,12 +232,12 @@ def discover_project(id: int):
             new_value={"suites_found": len(suites), "cases_found": total_cases},
         )
         flash(
-            f"Discovered {len(suites)} suite(s) with {total_cases} test case(s).",
+            f"发现 {len(suites)} 个测试套件，共 {total_cases} 个测试用例。",
             "success",
         )
     except RuntimeError as exc:
         logger.error("Suite discovery failed for project %s: %s", project.id, exc)
-        flash(f"Discovery failed: {exc}", "danger")
+        flash(f"套件发现失败: {exc}", "danger")
 
     return redirect(url_for("projects.detail_project", id=project.id))
 
@@ -257,5 +257,5 @@ def clone_project(id: int):
     from app.tasks.git_tasks import git_sync_project
     git_sync_project.delay(project.id, action="clone")
     log_audit("project.git.clone", resource_type="project", resource_id=project.id)
-    flash("Repository clone started in the background. Refresh in a moment.", "info")
+    flash("仓库克隆已在后台启动，请稍后刷新页面。", "info")
     return redirect(url_for("projects.detail_project", id=project.id))

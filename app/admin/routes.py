@@ -6,7 +6,6 @@ from flask_login import current_user, login_required
 from app.admin import admin_bp
 from app.admin.forms import SystemConfigForm, UserAdminForm
 from app.admin.services import validate_all_configs
-from app.auth.decorators import role_required
 from app.extensions import db
 from app.models.audit_log import AuditLog
 from app.models.system_config import SystemConfig
@@ -64,7 +63,7 @@ def create_user():
             db.or_(User.username == form.username.data, User.email == form.email.data)
         ).first()
         if existing:
-            flash("A user with that username or email already exists.", "danger")
+            flash("该用户名或邮箱已被使用。", "danger")
             return render_template("admin/user_form.html", form=form, editing=False)
 
         user = User(
@@ -83,7 +82,7 @@ def create_user():
             resource_id=user.id,
             new_value={"username": user.username, "role": user.role.value},
         )
-        flash(f"User {user.username} created.", "success")
+        flash(f"用户 {user.username} 创建成功。", "success")
         return redirect(url_for("admin.list_users"))
 
     return render_template("admin/user_form.html", form=form, editing=False)
@@ -111,7 +110,7 @@ def edit_user(id: int):
             )
         ).first()
         if conflict:
-            flash("Another user with that username or email already exists.", "danger")
+            flash("该用户名或邮箱已被其他用户使用。", "danger")
             return render_template("admin/user_form.html", form=form, editing=True, user=user)
 
         old_values = {
@@ -144,7 +143,7 @@ def edit_user(id: int):
             old_value=old_values,
             new_value=new_values,
         )
-        flash(f"User {user.username} updated.", "success")
+        flash(f"用户 {user.username} 更新成功。", "success")
         return redirect(url_for("admin.list_users"))
 
     return render_template("admin/user_form.html", form=form, editing=True, user=user)
@@ -159,7 +158,7 @@ def delete_user(id: int):
     user = User.query.get_or_404(id)
 
     if user.id == current_user.id:
-        flash("You cannot delete your own account.", "danger")
+        flash("不能删除自己的账号。", "danger")
         return redirect(url_for("admin.list_users"))
 
     old_values = {"username": user.username, "is_active": user.is_active}
@@ -173,7 +172,7 @@ def delete_user(id: int):
         old_value=old_values,
         new_value={"is_active": False},
     )
-    flash(f"User {user.username} has been deactivated.", "success")
+    flash(f"用户 {user.username} 已被停用。", "success")
     return redirect(url_for("admin.list_users"))
 
 
@@ -195,7 +194,7 @@ def update_config():
     """Update one or more system configuration values."""
     form = SystemConfigForm()
     if not form.validate_on_submit():
-        flash("Invalid form submission. Please try again.", "danger")
+        flash("表单提交无效，请重试。", "danger")
         return redirect(url_for("admin.config_page"))
 
     # Collect submitted config values (all form fields prefixed with "config_")
@@ -206,7 +205,7 @@ def update_config():
             submitted[cfg_key] = request.form[key]
 
     if not submitted:
-        flash("No configuration changes submitted.", "warning")
+        flash("未提交任何配置变更。", "warning")
         return redirect(url_for("admin.config_page"))
 
     # Validate
@@ -235,9 +234,9 @@ def update_config():
             resource_type="system_config",
             new_value={"changes": changes},
         )
-        flash(f"Updated {len(changes)} configuration value(s).", "success")
+        flash(f"已更新 {len(changes)} 项配置。", "success")
     else:
-        flash("No values were changed.", "info")
+        flash("没有值被更改。", "info")
 
     return redirect(url_for("admin.config_page"))
 

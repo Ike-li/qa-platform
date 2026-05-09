@@ -60,11 +60,11 @@ def get_project(project_id: int):
     user = db.session.get(User, g.api_user_id)
     visible_ids = _user_visible_project_ids(user)
     if visible_ids is not None and project_id not in visible_ids:
-        return jsonify({"error": "Project not found."}), 404
+        return jsonify({"error": "项目未找到。"}), 404
 
     project = db.session.get(Project, project_id)
     if project is None:
-        return jsonify({"error": "Project not found."}), 404
+        return jsonify({"error": "项目未找到。"}), 404
 
     suites = []
     if hasattr(project, "suites"):

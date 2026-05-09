@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Trigger Execution - {{ project.name }} - QA Platform{% endblock %}
+{% block title %}触发执行 - {{ project.name }} - QA Platform{% endblock %}
 
 {% block content %}
 <div class="row">
@@ -8,7 +8,7 @@
         <div class="card shadow-sm">
             <div class="card-header">
                 <h5 class="mb-0">
-                    <i class="bi bi-play-fill"></i> Trigger Test Execution
+                    <i class="bi bi-play-fill"></i> 触发测试执行
                     <span class="badge bg-secondary fs-6">{{ project.name }}</span>
                 </h5>
             </div>
@@ -17,36 +17,36 @@
                     {{ form.hidden_tag() }}
 
                     <div class="mb-3">
-                        <label for="suite_id" class="form-label">Test Suite</label>
+                        <label for="suite_id" class="form-label">测试套件</label>
                         {{ form.suite_id(class="form-select", id="suite_id") }}
                         {% for error in form.suite_id.errors %}
                         <div class="text-danger small mt-1">{{ error }}</div>
                         {% endfor %}
                         <div class="form-text">
-                            Select a specific suite or leave as "All Suites" to run the entire project.
+                            选择指定套件，或保留"全部套件"以运行整个项目。
                         </div>
                     </div>
 
                     <div class="mb-3">
-                        <label for="extra_args" class="form-label">Extra Pytest Arguments</label>
+                        <label for="extra_args" class="form-label">额外 Pytest 参数</label>
                         {{ form.extra_args(class="form-control", id="extra_args", rows="3",
                             placeholder="e.g. -k 'smoke' --timeout=60 -x") }}
                         {% for error in form.extra_args.errors %}
                         <div class="text-danger small mt-1">{{ error }}</div>
                         {% endfor %}
                         <div class="form-text">
-                            Optional additional CLI arguments passed to pytest.
+                            可选的额外命令行参数，将传递给 pytest。
                         </div>
                     </div>
 
                     <div class="d-flex justify-content-between">
                         <a href="{{ url_for('projects.detail_project', id=project.id) }}"
                            class="btn btn-outline-secondary">
-                            <i class="bi bi-arrow-left"></i> Back to Project
+                            <i class="bi bi-arrow-left"></i> 返回项目
                         </a>
                         <button type="submit" class="btn btn-primary"
                                 onclick="this.disabled=true; this.form.submit();">
-                            <i class="bi bi-play-fill"></i> Start Execution
+                            <i class="bi bi-play-fill"></i> 开始执行
                         </button>
                     </div>
                 </form>
@@ -57,28 +57,28 @@
     <div class="col-lg-4">
         <div class="card shadow-sm">
             <div class="card-header">
-                <h6 class="mb-0"><i class="bi bi-info-circle"></i> Execution Pipeline</h6>
+                <h6 class="mb-0"><i class="bi bi-info-circle"></i> 执行流水线</h6>
             </div>
             <div class="card-body small">
-                <p>Each execution runs a three-stage pipeline:</p>
+                <p>每次执行将运行三阶段流水线：</p>
                 <ol>
                     <li>
-                        <strong>Git Sync</strong> - Clone or pull the repository,
-                        create a Python virtualenv, install dependencies.
+                        <strong>Git 同步</strong> - 克隆或拉取仓库，
+                        创建 Python 虚拟环境并安装依赖。
                     </li>
                     <li>
-                        <strong>Run Tests</strong> - Execute pytest with Allure
-                        and JUnit XML output.
+                        <strong>运行测试</strong> - 执行 pytest，
+                        输出 Allure 和 JUnit XML 格式结果。
                     </li>
                     <li>
-                        <strong>Generate Report</strong> - Build the Allure HTML
-                        report from test results.
+                        <strong>生成报告</strong> - 基于测试结果
+                        构建 Allure HTML 报告。
                     </li>
                 </ol>
                 <p class="mb-0 text-muted">
                     <i class="bi bi-shield-lock"></i>
-                    Max {{ 3 }} parallel executions.
-                    The venv is cleaned up after completion.
+                    最多 {{ 3 }} 个并行执行。
+                    虚拟环境在完成后自动清理。
                 </p>
             </div>
         </div>
@@ -86,7 +86,7 @@
         {% if suites %}
         <div class="card shadow-sm mt-3">
             <div class="card-header">
-                <h6 class="mb-0"><i class="bi bi-collection"></i> Available Suites</h6>
+                <h6 class="mb-0"><i class="bi bi-collection"></i> 可用套件</h6>
             </div>
             <ul class="list-group list-group-flush">
                 {% for suite in suites %}

@@ -32,23 +32,23 @@ def create_execution():
     from app.models.user import User
     user = db.session.get(User, g.api_user_id)
     if user is None or not user.has_permission("execution.trigger"):
-        return jsonify({"error": "Insufficient permissions. execution.trigger required."}), 403
+        return jsonify({"error": "权限不足，需要 execution.trigger 权限。"}), 403
 
     data = request.get_json(silent=True) or {}
 
     project_id = data.get("project_id")
     if not project_id:
-        return jsonify({"error": "project_id is required."}), 400
+        return jsonify({"error": "缺少必填参数 project_id。"}), 400
 
     project = Project.query.get(project_id)
     if project is None:
-        return jsonify({"error": "Project not found."}), 404
+        return jsonify({"error": "项目未找到。"}), 404
 
     suite_id = data.get("suite_id")
     if suite_id is not None:
         suite = TestSuite.query.filter_by(id=suite_id, project_id=project_id).first()
         if suite is None:
-            return jsonify({"error": "Suite not found or does not belong to project."}), 404
+            return jsonify({"error": "测试套件未找到或不属于该项目。"}), 404
 
     extra_args = data.get("extra_args")
 

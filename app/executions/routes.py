@@ -141,14 +141,14 @@ def trigger_execution(project_id: int):
                 },
             )
 
-            flash(f"Execution #{execution.id} queued successfully.", "success")
+            flash(f"执行 #{execution.id} 已成功加入队列。", "success")
             return redirect(url_for("executions.detail_execution", id=execution.id))
 
         except ValueError as exc:
             flash(str(exc), "danger")
         except Exception as exc:
             logger.exception("Failed to trigger execution")
-            flash(f"Failed to trigger execution: {exc}", "danger")
+            flash(f"触发执行失败: {exc}", "danger")
 
     return render_template(
         "executions/trigger.html",

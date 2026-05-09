@@ -1,13 +1,13 @@
 {% extends "base.html" %}
 
-{% block title %}Profile - QA Platform{% endblock %}
+{% block title %}个人资料 - QA Platform{% endblock %}
 
 {% block content %}
 <div class="row">
     <div class="col-lg-8">
         <div class="card shadow-sm">
             <div class="card-header">
-                <h5 class="mb-0"><i class="bi bi-person"></i> User Profile</h5>
+                <h5 class="mb-0"><i class="bi bi-person"></i> 个人资料</h5>
             </div>
             <div class="card-body">
                 <form method="post" novalidate>
@@ -15,11 +15,11 @@
 
                     <div class="row mb-3">
                         <div class="col-md-6">
-                            <label class="form-label text-muted">Username</label>
+                            <label class="form-label text-muted">用户名</label>
                             <p class="form-control-plaintext fw-bold">{{ current_user.username }}</p>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label text-muted">Role</label>
+                            <label class="form-label text-muted">角色</label>
                             <p class="form-control-plaintext">
                                 <span class="badge bg-info">{{ current_user.role_display }}</span>
                             </p>
@@ -27,7 +27,7 @@
                     </div>
 
                     <div class="mb-3">
-                        <label for="email" class="form-label">Email</label>
+                        <label for="email" class="form-label">邮箱</label>
                         {{ form.email(class="form-control", id="email") }}
                         {% for error in form.email.errors %}
                         <div class="text-danger small mt-1">{{ error }}</div>
@@ -35,10 +35,10 @@
                     </div>
 
                     <hr class="my-4">
-                    <h6>Change Password <small class="text-muted">(leave blank to keep current)</small></h6>
+                    <h6>修改密码 <small class="text-muted">（留空则保持当前密码）</small></h6>
 
                     <div class="mb-3">
-                        <label for="current_password" class="form-label">Current Password</label>
+                        <label for="current_password" class="form-label">当前密码</label>
                         {{ form.current_password(class="form-control", id="current_password") }}
                         {% for error in form.current_password.errors %}
                         <div class="text-danger small mt-1">{{ error }}</div>
@@ -47,14 +47,14 @@
 
                     <div class="row mb-3">
                         <div class="col-md-6">
-                            <label for="new_password" class="form-label">New Password</label>
+                            <label for="new_password" class="form-label">新密码</label>
                             {{ form.new_password(class="form-control", id="new_password") }}
                             {% for error in form.new_password.errors %}
                             <div class="text-danger small mt-1">{{ error }}</div>
                             {% endfor %}
                         </div>
                         <div class="col-md-6">
-                            <label for="confirm_password" class="form-label">Confirm New Password</label>
+                            <label for="confirm_password" class="form-label">确认新密码</label>
                             {{ form.confirm_password(class="form-control", id="confirm_password") }}
                             {% for error in form.confirm_password.errors %}
                             <div class="text-danger small mt-1">{{ error }}</div>
@@ -64,7 +64,7 @@
 
                     <div class="d-flex justify-content-end">
                         <button type="submit" class="btn btn-primary">
-                            <i class="bi bi-check-lg"></i> Save Changes
+                            <i class="bi bi-check-lg"></i> 保存
                         </button>
                     </div>
                 </form>
@@ -75,18 +75,18 @@
     <div class="col-lg-4">
         <div class="card shadow-sm">
             <div class="card-header">
-                <h6 class="mb-0"><i class="bi bi-info-circle"></i> Account Info</h6>
+                <h6 class="mb-0"><i class="bi bi-info-circle"></i> 账户信息</h6>
             </div>
             <div class="card-body">
                 <dl class="mb-0">
-                    <dt>Member Since</dt>
+                    <dt>注册时间</dt>
                     <dd>{{ current_user.created_at.strftime('%Y-%m-%d') }}</dd>
-                    <dt>Account Status</dt>
+                    <dt>账户状态</dt>
                     <dd>
                         {% if current_user.is_active %}
-                        <span class="badge bg-success">Active</span>
+                        <span class="badge bg-success">启用</span>
                         {% else %}
-                        <span class="badge bg-danger">Inactive</span>
+                        <span class="badge bg-danger">停用</span>
                         {% endif %}
                     </dd>
                 </dl>

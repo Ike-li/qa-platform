@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}{% if editing %}Edit User{% else %}Create User{% endif %} - QA Platform{% endblock %}
+{% block title %}{% if editing %}编辑用户{% else %}创建用户{% endif %} - QA Platform{% endblock %}
 
 {% block content %}
 <div class="row">
@@ -9,9 +9,9 @@
             <div class="card-header">
                 <h5 class="mb-0">
                     {% if editing %}
-                    <i class="bi bi-pencil"></i> Edit User: {{ user.username }}
+                    <i class="bi bi-pencil"></i> 编辑用户: {{ user.username }}
                     {% else %}
-                    <i class="bi bi-person-plus"></i> Create New User
+                    <i class="bi bi-person-plus"></i> 创建新用户
                     {% endif %}
                 </h5>
             </div>
@@ -20,15 +20,15 @@
                     {{ form.hidden_tag() }}
 
                     <div class="mb-3">
-                        <label for="username" class="form-label">Username</label>
-                        {{ form.username(class="form-control", id="username", placeholder="Enter username") }}
+                        <label for="username" class="form-label">用户名</label>
+                        {{ form.username(class="form-control", id="username", placeholder="请输入用户名") }}
                         {% for error in form.username.errors %}
                         <div class="text-danger small mt-1">{{ error }}</div>
                         {% endfor %}
                     </div>
 
                     <div class="mb-3">
-                        <label for="email" class="form-label">Email</label>
+                        <label for="email" class="form-label">邮箱</label>
                         {{ form.email(class="form-control", id="email", placeholder="user@example.com") }}
                         {% for error in form.email.errors %}
                         <div class="text-danger small mt-1">{{ error }}</div>
@@ -36,7 +36,7 @@
                     </div>
 
                     <div class="mb-3">
-                        <label for="role" class="form-label">Role</label>
+                        <label for="role" class="form-label">角色</label>
                         {{ form.role(class="form-select", id="role") }}
                         {% for error in form.role.errors %}
                         <div class="text-danger small mt-1">{{ error }}</div>
@@ -45,12 +45,12 @@
 
                     <div class="mb-3">
                         <label for="password" class="form-label">
-                            Password
+                            密码
                             {% if editing %}
-                            <small class="text-muted">(leave blank to keep current)</small>
+                            <small class="text-muted">（留空则保持当前密码）</small>
                             {% endif %}
                         </label>
-                        {{ form.password(class="form-control", id="password", placeholder="Enter password") }}
+                        {{ form.password(class="form-control", id="password", placeholder="请输入密码") }}
                         {% for error in form.password.errors %}
                         <div class="text-danger small mt-1">{{ error }}</div>
                         {% endfor %}
@@ -58,16 +58,16 @@
 
                     <div class="mb-3 form-check">
                         {{ form.is_active(class="form-check-input", id="is_active") }}
-                        <label class="form-check-label" for="is_active">Active</label>
+                        <label class="form-check-label" for="is_active">启用</label>
                     </div>
 
                     <div class="d-flex justify-content-between">
                         <a href="{{ url_for('admin.list_users') }}" class="btn btn-outline-secondary">
-                            <i class="bi bi-arrow-left"></i> Back
+                            <i class="bi bi-arrow-left"></i> 返回
                         </a>
                         <button type="submit" class="btn btn-primary">
                             <i class="bi bi-check-lg"></i>
-                            {% if editing %}Save Changes{% else %}Create User{% endif %}
+                            {% if editing %}保存更改{% else %}创建用户{% endif %}
                         </button>
                     </div>
                 </form>
@@ -78,18 +78,18 @@
     <div class="col-lg-4">
         <div class="card shadow-sm">
             <div class="card-header">
-                <h6 class="mb-0"><i class="bi bi-info-circle"></i> Role Permissions</h6>
+                <h6 class="mb-0"><i class="bi bi-info-circle"></i> 角色权限</h6>
             </div>
             <div class="card-body small">
                 <dl>
-                    <dt>Super Admin</dt>
-                    <dd>Full access to all features, users, and configuration.</dd>
-                    <dt>Project Lead</dt>
-                    <dd>Create/edit projects, trigger executions, view reports.</dd>
-                    <dt>Tester</dt>
-                    <dd>Trigger executions, view executions and reports.</dd>
-                    <dt>Visitor</dt>
-                    <dd>Read-only access to executions and reports.</dd>
+                    <dt>超级管理员</dt>
+                    <dd>完全访问所有功能、用户和配置。</dd>
+                    <dt>项目负责人</dt>
+                    <dd>创建/编辑项目，触发执行，查看报告。</dd>
+                    <dt>测试人员</dt>
+                    <dd>触发执行，查看执行记录和报告。</dd>
+                    <dt>访客</dt>
+                    <dd>只读访问执行记录和报告。</dd>
                 </dl>
             </div>
         </div>

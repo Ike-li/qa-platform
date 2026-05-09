@@ -39,6 +39,11 @@ class BaseConfig:
     CELERY_ENABLE_UTC = True
     CELERY_TASK_PROTOCOL = 2
 
+    # OpenAPI / Swagger UI
+    OPENAPI_URL_PREFIX = "/api"
+    OPENAPI_SWAGGER_UI_PATH = "docs"
+    OPENAPI_SWAGGER_UI_URL = "https://cdn.jsdelivr.net/npm/swagger-ui-dist/"
+
     # Allure
     ALLURE_REPORTS_DIR = os.getenv("ALLURE_REPORTS_DIR", "/app/allure-reports")
     ALLURE_RESULTS_DIR = os.getenv("ALLURE_RESULTS_DIR", "/app/allure-results")

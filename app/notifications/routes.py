@@ -2,7 +2,7 @@
 
 import logging
 
-from flask import abort, flash, jsonify, redirect, render_template, request, url_for
+from flask import abort, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 
 from app.extensions import db
@@ -51,13 +51,13 @@ def create_config(project_id: int):
     if request.method == "POST":
         channel = request.form.get("channel")
         if not channel:
-            flash("Channel is required.", "danger")
+            flash("请选择通知渠道。", "danger")
             return redirect(url_for("notifications.create_config", project_id=project_id))
 
         try:
             ch = NotificationChannel(channel)
         except ValueError:
-            flash("Invalid channel.", "danger")
+            flash("无效的通知渠道。", "danger")
             return redirect(url_for("notifications.create_config", project_id=project_id))
 
         webhook_url = request.form.get("webhook_url", "").strip() or None
@@ -77,7 +77,7 @@ def create_config(project_id: int):
         )
         db.session.add(config)
         db.session.commit()
-        flash(f"Notification channel {ch.value} created for {project.name}.", "success")
+        flash(f"已为项目 {project.name} 创建通知渠道 {ch.value}。", "success")
         return redirect(url_for("notifications.list_configs"))
 
     return render_template(
@@ -104,7 +104,7 @@ def edit_config(config_id: int):
         config.is_active = request.form.get("is_active") == "on"
         config.trigger_events = request.form.getlist("trigger_events")
         db.session.commit()
-        flash("Notification config updated.", "success")
+        flash("通知配置已更新。", "success")
         return redirect(url_for("notifications.list_configs"))
 
     return render_template(
@@ -125,7 +125,7 @@ def delete_config(config_id: int):
     config = NotificationConfig.query.get_or_404(config_id)
     db.session.delete(config)
     db.session.commit()
-    flash("Notification config deleted.", "success")
+    flash("通知配置已删除。", "success")
     return redirect(url_for("notifications.list_configs"))
 
 
@@ -150,26 +150,26 @@ def test_notification(config_id: int):
         if channel == NotificationChannel.EMAIL:
             recipients = [e.strip() for e in (config.email_recipients or "").split(",") if e.strip()]
             if not recipients:
-                flash("No email recipients configured.", "warning")
+                flash("未配置邮件收件人。", "warning")
                 return redirect(url_for("notifications.list_configs"))
             send_email(recipients, test_subject, test_body)
 
         elif channel == NotificationChannel.DINGTALK:
             if not config.webhook_url:
-                flash("No DingTalk webhook URL configured.", "warning")
+                flash("未配置钉钉 Webhook URL。", "warning")
                 return redirect(url_for("notifications.list_configs"))
             send_dingtalk(config.webhook_url, test_subject, test_body)
 
         elif channel == NotificationChannel.WECHAT:
             if not config.webhook_url:
-                flash("No WeChat webhook URL configured.", "warning")
+                flash("未配置企业微信 Webhook URL。", "warning")
                 return redirect(url_for("notifications.list_configs"))
             send_wechat(config.webhook_url, test_body)
 
-        flash(f"Test notification sent via {channel.value}.", "success")
+        flash(f"测试通知已通过 {channel.value} 发送。", "success")
 
     except Exception as exc:
         logger.exception("Test notification failed for config %d", config_id)
-        flash(f"Failed to send test notification: {exc}", "danger")
+        flash(f"发送测试通知失败: {exc}", "danger")
 
     return redirect(url_for("notifications.list_configs"))

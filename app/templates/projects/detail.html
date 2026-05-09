@@ -13,33 +13,33 @@
         <form method="post" action="{{ url_for('projects.clone_project', id=project.id) }}" class="d-inline">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button type="submit" class="btn btn-sm btn-outline-success">
-                <i class="bi bi-download"></i> Clone
+                <i class="bi bi-download"></i> 克隆
             </button>
         </form>
         <form method="post" action="{{ url_for('projects.pull_project', id=project.id) }}" class="d-inline">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button type="submit" class="btn btn-sm btn-outline-info">
-                <i class="bi bi-arrow-down-circle"></i> Re-pull
+                <i class="bi bi-arrow-down-circle"></i> 重新拉取
             </button>
         </form>
         <form method="post" action="{{ url_for('projects.discover_project', id=project.id) }}" class="d-inline">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button type="submit" class="btn btn-sm btn-outline-warning">
-                <i class="bi bi-search"></i> Re-discover
+                <i class="bi bi-search"></i> 重新发现
             </button>
         </form>
         <a href="{{ url_for('projects.edit_project', id=project.id) }}" class="btn btn-sm btn-outline-primary">
-            <i class="bi bi-pencil"></i> Edit
+            <i class="bi bi-pencil"></i> 编辑
         </a>
         {% endif %}
         {% if current_user.has_role('super_admin') %}
         <form method="post"
               action="{{ url_for('projects.delete_project', id=project.id) }}"
               class="d-inline"
-              onsubmit="return confirm('Delete project {{ project.name }}? This cannot be undone.');">
+              onsubmit="return confirm('确认删除项目 {{ project.name }}？此操作不可撤销。');">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button type="submit" class="btn btn-sm btn-outline-danger">
-                <i class="bi bi-trash"></i> Delete
+                <i class="bi bi-trash"></i> 删除
             </button>
         </form>
         {% endif %}
@@ -51,34 +51,34 @@
     <div class="col-lg-4">
         <div class="card shadow-sm mb-4">
             <div class="card-header">
-                <h6 class="mb-0"><i class="bi bi-info-circle"></i> Project Info</h6>
+                <h6 class="mb-0"><i class="bi bi-info-circle"></i> 项目信息</h6>
             </div>
             <div class="card-body">
                 <dl class="mb-0">
-                    <dt>Description</dt>
-                    <dd>{{ project.description or 'No description' }}</dd>
+                    <dt>描述</dt>
+                    <dd>{{ project.description or '暂无描述' }}</dd>
 
-                    <dt>Git URL</dt>
+                    <dt>Git 地址</dt>
                     <dd><code>{{ project.git_url }}</code></dd>
 
-                    <dt>Branch</dt>
+                    <dt>分支</dt>
                     <dd><span class="badge bg-secondary">{{ project.git_branch }}</span></dd>
 
-                    <dt>Owner</dt>
+                    <dt>所有者</dt>
                     <dd>{{ project.owner.username }}</dd>
 
-                    <dt>Created</dt>
+                    <dt>创建时间</dt>
                     <dd>{{ project.created_at.strftime('%Y-%m-%d %H:%M') }}</dd>
 
-                    <dt>Updated</dt>
+                    <dt>更新时间</dt>
                     <dd>{{ project.updated_at.strftime('%Y-%m-%d %H:%M') }}</dd>
 
-                    <dt>Credential</dt>
+                    <dt>凭证</dt>
                     <dd>
                         {% if project.git_credential %}
-                        <span class="badge bg-success"><i class="bi bi-lock-fill"></i> Configured</span>
+                        <span class="badge bg-success"><i class="bi bi-lock-fill"></i> 已配置</span>
                         {% else %}
-                        <span class="badge bg-secondary">None</span>
+                        <span class="badge bg-secondary">无</span>
                         {% endif %}
                     </dd>
                 </dl>
@@ -88,17 +88,17 @@
         <!-- Summary stats -->
         <div class="card shadow-sm mb-4">
             <div class="card-header">
-                <h6 class="mb-0"><i class="bi bi-bar-chart"></i> Summary</h6>
+                <h6 class="mb-0"><i class="bi bi-bar-chart"></i> 概要统计</h6>
             </div>
             <div class="card-body">
                 <div class="row text-center">
                     <div class="col-6">
                         <h4 class="text-primary">{{ project.suite_count }}</h4>
-                        <small class="text-muted">Suites</small>
+                        <small class="text-muted">测试套件</small>
                     </div>
                     <div class="col-6">
                         <h4 class="text-success">{{ project.test_case_count }}</h4>
-                        <small class="text-muted">Test Cases</small>
+                        <small class="text-muted">测试用例</small>
                     </div>
                 </div>
             </div>
@@ -109,19 +109,19 @@
     <div class="col-lg-8">
         <div class="card shadow-sm">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <h6 class="mb-0"><i class="bi bi-collection"></i> Test Suites</h6>
-                <span class="badge bg-primary">{{ suites|length }} suites</span>
+                <h6 class="mb-0"><i class="bi bi-collection"></i> 测试套件</h6>
+                <span class="badge bg-primary">{{ suites|length }} 个套件</span>
             </div>
             {% if suites %}
             <div class="table-responsive">
                 <table class="table table-hover mb-0">
                     <thead class="table-light">
                         <tr>
-                            <th>Suite Name</th>
-                            <th>Path</th>
-                            <th>Type</th>
-                            <th>Cases</th>
-                            <th>Created</th>
+                            <th>套件名称</th>
+                            <th>路径</th>
+                            <th>类型</th>
+                            <th>用例数</th>
+                            <th>创建时间</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -150,8 +150,8 @@
             {% else %}
             <div class="card-body text-center text-muted py-5">
                 <i class="bi bi-inbox" style="font-size: 2rem;"></i>
-                <p class="mt-2 mb-0">No test suites discovered yet.</p>
-                <p class="small">Clone the repository and click <strong>Re-discover</strong> to scan for tests.</p>
+                <p class="mt-2 mb-0">暂未发现测试套件。</p>
+                <p class="small">请先克隆仓库，然后点击<strong>重新发现</strong>来扫描测试。</p>
             </div>
             {% endif %}
         </div>
@@ -160,7 +160,7 @@
 
 <div class="mt-3">
     <a href="{{ url_for('projects.list_projects') }}" class="btn btn-outline-secondary btn-sm">
-        <i class="bi bi-arrow-left"></i> Back to Projects
+        <i class="bi bi-arrow-left"></i> 返回项目列表
     </a>
 </div>
 {% endblock %}

@@ -25,7 +25,7 @@ def role_required(*roles: Role):
         @functools.wraps(f)
         def wrapper(*args, **kwargs):
             if not current_user.is_authenticated:
-                flash("Please log in to access this page.", "warning")
+                flash("请先登录后再访问此页面。", "warning")
                 return redirect(url_for("auth.login", next=request.url))
             if not current_user.has_role(*roles):
                 abort(403)
@@ -53,7 +53,7 @@ def permission_required(resource: str, action: str):
         @functools.wraps(f)
         def wrapper(*args, **kwargs):
             if not current_user.is_authenticated:
-                flash("Please log in to access this page.", "warning")
+                flash("请先登录后再访问此页面。", "warning")
                 return redirect(url_for("auth.login", next=request.url))
             perm = f"{resource}.{action}"
             if not current_user.has_permission(perm):
@@ -82,7 +82,7 @@ def project_permission_required(permission: str):
         @functools.wraps(f)
         def wrapper(*args, **kwargs):
             if not current_user.is_authenticated:
-                flash("Please log in to access this page.", "warning")
+                flash("请先登录后再访问此页面。", "warning")
                 return redirect(url_for("auth.login", next=request.url))
 
             project_id = kwargs.get("project_id") or kwargs.get("id")

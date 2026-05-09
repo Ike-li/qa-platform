@@ -1,10 +1,10 @@
 {% extends "base.html" %}
 
-{% block title %}Test Executions - QA Platform{% endblock %}
+{% block title %}测试执行 - QA Platform{% endblock %}
 
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h4><i class="bi bi-play-circle"></i> Test Executions</h4>
+    <h4><i class="bi bi-play-circle"></i> 测试执行</h4>
 </div>
 
 <!-- Filters -->
@@ -13,7 +13,7 @@
         <form method="get" class="row g-2 align-items-center">
             <div class="col-auto">
                 <select name="project_id" class="form-select form-select-sm">
-                    <option value="">All Projects</option>
+                    <option value="">全部项目</option>
                     {% for p in projects %}
                     <option value="{{ p.id }}" {% if project_id == p.id %}selected{% endif %}>
                         {{ p.name }}
@@ -23,7 +23,7 @@
             </div>
             <div class="col-auto">
                 <select name="status" class="form-select form-select-sm">
-                    <option value="">All Statuses</option>
+                    <option value="">全部状态</option>
                     {% for s in ['pending','cloned','running','executed','completed','failed','timeout'] %}
                     <option value="{{ s }}" {% if status_filter == s %}selected{% endif %}>
                         {{ s|capitalize }}
@@ -33,10 +33,10 @@
             </div>
             <div class="col-auto">
                 <button type="submit" class="btn btn-sm btn-outline-primary">
-                    <i class="bi bi-funnel"></i> Filter
+                    <i class="bi bi-funnel"></i> 筛选
                 </button>
                 <a href="{{ url_for('executions.list_executions') }}" class="btn btn-sm btn-outline-secondary">
-                    <i class="bi bi-x-lg"></i> Clear
+                    <i class="bi bi-x-lg"></i> 清除
                 </a>
             </div>
         </form>
@@ -50,15 +50,15 @@
             <thead class="table-light">
                 <tr>
                     <th>#</th>
-                    <th>Project</th>
-                    <th>Suite</th>
-                    <th>Trigger</th>
-                    <th>Status</th>
-                    <th>Stage</th>
-                    <th>Commit</th>
-                    <th>Duration</th>
-                    <th>Created</th>
-                    <th class="text-end">Actions</th>
+                    <th>项目</th>
+                    <th>测试套件</th>
+                    <th>触发方式</th>
+                    <th>状态</th>
+                    <th>阶段</th>
+                    <th>提交</th>
+                    <th>耗时</th>
+                    <th>创建时间</th>
+                    <th class="text-end">操作</th>
                 </tr>
             </thead>
             <tbody>
@@ -80,7 +80,7 @@
                         {% if ex.suite %}
                         <code class="small">{{ ex.suite.name }}</code>
                         {% else %}
-                        <span class="text-muted">All</span>
+                        <span class="text-muted">全部</span>
                         {% endif %}
                     </td>
                     <td>
@@ -114,12 +114,12 @@
                     <td>{{ ex.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
                     <td class="text-end">
                         <a href="{{ url_for('executions.detail_execution', id=ex.id) }}"
-                           class="btn btn-sm btn-outline-primary" title="View Details">
+                           class="btn btn-sm btn-outline-primary" title="查看详情">
                             <i class="bi bi-eye"></i>
                         </a>
                         {% if ex.allure_report %}
                         <a href="{{ ex.allure_report.report_url }}"
-                           class="btn btn-sm btn-outline-success" title="Allure Report"
+                           class="btn btn-sm btn-outline-success" title="Allure 报告"
                            target="_blank">
                             <i class="bi bi-bar-chart"></i>
                         </a>
@@ -130,9 +130,9 @@
                 {% if not executions %}
                 <tr>
                     <td colspan="10" class="text-center text-muted py-4">
-                        No executions found.
+                        暂无数据
                         {% if current_user.has_permission('execution.trigger') %}
-                        <br>Go to a <a href="{{ url_for('projects.list_projects') }}">project</a> to trigger a run.
+                        <br>请前往<a href="{{ url_for('projects.list_projects') }}">项目</a>触发执行。
                         {% endif %}
                     </td>
                 </tr>
@@ -148,7 +148,7 @@
     <ul class="pagination pagination-sm justify-content-center">
         {% if pagination.has_prev %}
         <li class="page-item">
-            <a class="page-link" href="?page={{ pagination.prev_num }}&project_id={{ project_id or '' }}&status={{ status_filter }}">Previous</a>
+            <a class="page-link" href="?page={{ pagination.prev_num }}&project_id={{ project_id or '' }}&status={{ status_filter }}">上一页</a>
         </li>
         {% endif %}
         {% for p in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
@@ -162,7 +162,7 @@
         {% endfor %}
         {% if pagination.has_next %}
         <li class="page-item">
-            <a class="page-link" href="?page={{ pagination.next_num }}&project_id={{ project_id or '' }}&status={{ status_filter }}">Next</a>
+            <a class="page-link" href="?page={{ pagination.next_num }}&project_id={{ project_id or '' }}&status={{ status_filter }}">下一页</a>
         </li>
         {% endif %}
     </ul>

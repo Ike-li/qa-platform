@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Dashboard - QA Platform{% endblock %}
+{% block title %}仪表盘 - QA Platform{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -72,12 +72,12 @@
     <!-- Page header with project filter -->
     <div class="d-flex flex-wrap align-items-center justify-content-between mb-4">
         <h4 class="mb-0">
-            <i class="bi bi-speedometer2 me-2"></i>Dashboard
+            <i class="bi bi-speedometer2 me-2"></i>仪表盘
         </h4>
         <div class="d-flex align-items-center gap-2">
-            <label for="projectFilter" class="form-label mb-0 text-muted small">Project:</label>
+            <label for="projectFilter" class="form-label mb-0 text-muted small">项目：</label>
             <select id="projectFilter" class="form-select form-select-sm" style="width: auto;">
-                <option value="">-- Select Project --</option>
+                <option value="">-- 选择项目 --</option>
                 {% for p in projects %}
                 <option value="{{ p.id }}">{{ p.name }}</option>
                 {% endfor %}
@@ -88,7 +88,7 @@
     <!-- No-project-selected placeholder -->
     <div id="noProjectMsg" class="text-center text-muted py-5" style="display: none;">
         <i class="bi bi-arrow-up-circle fs-1"></i>
-        <p class="mt-2">Please select a project to view the dashboard.</p>
+        <p class="mt-2">请选择一个项目以查看仪表盘。</p>
     </div>
 
     <!-- Global overview (shown by default) -->
@@ -99,7 +99,7 @@
                 <div class="card dashboard-card h-100">
                     <div class="card-body text-center">
                         <div class="fs-2 fw-bold text-primary" id="globalTotalProjects">--</div>
-                        <div class="text-muted small mt-1">Total Projects</div>
+                        <div class="text-muted small mt-1">项目总数</div>
                     </div>
                 </div>
             </div>
@@ -107,7 +107,7 @@
                 <div class="card dashboard-card h-100">
                     <div class="card-body text-center">
                         <div class="fs-2 fw-bold text-info" id="globalActiveExec">--</div>
-                        <div class="text-muted small mt-1">Active Executions</div>
+                        <div class="text-muted small mt-1">进行中的执行</div>
                     </div>
                 </div>
             </div>
@@ -115,7 +115,7 @@
                 <div class="card dashboard-card h-100">
                     <div class="card-body text-center">
                         <div class="fs-2 fw-bold" id="globalPassRate">--</div>
-                        <div class="text-muted small mt-1">Recent Pass Rate (7d)</div>
+                        <div class="text-muted small mt-1">近7天通过率</div>
                     </div>
                 </div>
             </div>
@@ -123,7 +123,7 @@
                 <div class="card dashboard-card h-100">
                     <div class="card-body text-center">
                         <div class="fs-2 fw-bold text-warning" id="globalFailingTrends">--</div>
-                        <div class="text-muted small mt-1">Failing Trend Projects</div>
+                        <div class="text-muted small mt-1">趋势下降项目</div>
                     </div>
                 </div>
             </div>
@@ -132,8 +132,8 @@
         <!-- Project health table -->
         <div class="card dashboard-card">
             <div class="card-header">
-                <span><i class="bi bi-folder me-1"></i> Project Health Overview</span>
-                <button class="btn btn-sm btn-outline-secondary" id="refreshGlobalBtn" title="Refresh">
+                <span><i class="bi bi-folder me-1"></i> 项目健康概览</span>
+                <button class="btn btn-sm btn-outline-secondary" id="refreshGlobalBtn" title="刷新">
                     <i class="bi bi-arrow-clockwise"></i>
                 </button>
             </div>
@@ -142,16 +142,16 @@
                     <table class="table table-hover table-sm mb-0">
                         <thead class="table-light">
                             <tr>
-                                <th>Project</th>
-                                <th>Latest Pass Rate</th>
-                                <th>Last Execution</th>
-                                <th>Status</th>
+                                <th>项目</th>
+                                <th>最新通过率</th>
+                                <th>最近执行</th>
+                                <th>状态</th>
                                 <th></th>
                             </tr>
                         </thead>
                         <tbody id="globalProjectsBody">
                             <tr>
-                                <td colspan="5" class="text-center text-muted py-4">Loading...</td>
+                                <td colspan="5" class="text-center text-muted py-4">加载中...</td>
                             </tr>
                         </tbody>
                     </table>
@@ -168,7 +168,7 @@
             <div class="col-lg-4 col-md-6">
                 <div class="card dashboard-card h-100">
                     <div class="card-header">
-                        <span><i class="bi bi-pie-chart me-1"></i> Pass Rate Overview</span>
+                        <span><i class="bi bi-pie-chart me-1"></i> 通过率概览</span>
                         <span id="passRateBadge" class="badge bg-secondary">--</span>
                     </div>
                     <div class="card-body d-flex flex-column align-items-center justify-content-center">
@@ -184,11 +184,11 @@
             <div class="col-lg-8 col-md-6">
                 <div class="card dashboard-card h-100">
                     <div class="card-header">
-                        <span><i class="bi bi-graph-up me-1"></i> Trend Analysis</span>
+                        <span><i class="bi bi-graph-up me-1"></i> 趋势分析</span>
                         <div class="btn-group granularity-toggle" role="group" aria-label="Granularity">
-                            <button type="button" class="btn btn-outline-primary active" data-granularity="daily">Daily</button>
-                            <button type="button" class="btn btn-outline-primary" data-granularity="weekly">Weekly</button>
-                            <button type="button" class="btn btn-outline-primary" data-granularity="monthly">Monthly</button>
+                            <button type="button" class="btn btn-outline-primary active" data-granularity="daily">按天</button>
+                            <button type="button" class="btn btn-outline-primary" data-granularity="weekly">按周</button>
+                            <button type="button" class="btn btn-outline-primary" data-granularity="monthly">按月</button>
                         </div>
                     </div>
                     <div class="card-body">
@@ -203,7 +203,7 @@
             <div class="col-lg-6">
                 <div class="card dashboard-card">
                     <div class="card-header">
-                        <span><i class="bi bi-hourglass-split me-1"></i> Execution Queue</span>
+                        <span><i class="bi bi-hourglass-split me-1"></i> 执行队列</span>
                         <span id="queueCountBadge" class="badge bg-info">0</span>
                     </div>
                     <div class="card-body p-0">
@@ -212,16 +212,16 @@
                                 <thead class="table-light">
                                     <tr>
                                         <th>#</th>
-                                        <th>Project</th>
-                                        <th>Suite</th>
-                                        <th>Status</th>
-                                        <th>Stage</th>
-                                        <th>Elapsed</th>
+                                        <th>项目</th>
+                                        <th>测试套件</th>
+                                        <th>状态</th>
+                                        <th>阶段</th>
+                                        <th>耗时</th>
                                     </tr>
                                 </thead>
                                 <tbody id="queueBody">
                                     <tr>
-                                        <td colspan="6" class="text-center text-muted py-4">No active executions</td>
+                                        <td colspan="6" class="text-center text-muted py-4">暂无执行中的任务</td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -234,7 +234,7 @@
             <div class="col-lg-6">
                 <div class="card dashboard-card">
                     <div class="card-header">
-                        <span><i class="bi bi-exclamation-triangle me-1"></i> Failed Tests</span>
+                        <span><i class="bi bi-exclamation-triangle me-1"></i> 失败的测试</span>
                         <span id="failureCountBadge" class="badge bg-danger">0</span>
                     </div>
                     <div class="card-body p-0">
@@ -242,15 +242,15 @@
                             <table class="table table-hover table-sm mb-0 table-failures">
                                 <thead class="table-light">
                                     <tr>
-                                        <th>Test Name</th>
-                                        <th>Suite / File</th>
-                                        <th>Error Snippet</th>
-                                        <th>Report</th>
+                                        <th>测试名称</th>
+                                        <th>套件 / 文件</th>
+                                        <th>错误摘要</th>
+                                        <th>报告</th>
                                     </tr>
                                 </thead>
                                 <tbody id="failuresBody">
                                     <tr>
-                                        <td colspan="4" class="text-center text-muted py-4">Select a project to view failures</td>
+                                        <td colspan="4" class="text-center text-muted py-4">请选择项目以查看失败详情</td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -268,13 +268,13 @@
     <!-- Loading overlay -->
     <div id="spinner-overlay">
         <div class="spinner-border text-primary" role="status">
-            <span class="visually-hidden">Loading...</span>
+            <span class="visually-hidden">加载中...</span>
         </div>
     </div>
 </div>
 {% endblock %}
 
 {% block extra_js %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{{ url_for('static', filename='vendor/chart.min.js') }}"></script>
 <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
 {% endblock %}
