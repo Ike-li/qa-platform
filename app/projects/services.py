@@ -33,7 +33,7 @@ _SUITE_TYPE_PATTERNS: list[tuple[re.Pattern, TestType]] = [
 # ------------------------------------------------------------------
 
 
-from app.utils.git import build_clone_url as _build_clone_url
+from app.utils.git import build_clone_url as _build_clone_url  # noqa: E402
 
 
 def _run_git(args: list[str], cwd: str, timeout: int = 300) -> subprocess.CompletedProcess:

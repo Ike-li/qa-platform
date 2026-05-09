@@ -145,7 +145,14 @@ class Execution(db.Model):
     def update_duration(self) -> None:
         """Recompute duration_sec from started_at / finished_at."""
         if self.started_at and self.finished_at:
-            delta = self.finished_at - self.started_at
+            start = self.started_at
+            end = self.finished_at
+            # Handle timezone-naive datetimes from SQLite
+            if start.tzinfo is None and end.tzinfo is not None:
+                start = start.replace(tzinfo=end.tzinfo)
+            elif end.tzinfo is None and start.tzinfo is not None:
+                end = end.replace(tzinfo=start.tzinfo)
+            delta = end - start
             self.duration_sec = round(delta.total_seconds(), 2)
 
     def __repr__(self) -> str:

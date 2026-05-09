@@ -8,7 +8,7 @@ from app.extensions import db
 logger = logging.getLogger(__name__)
 
 
-from app.extensions import celery
+from app.extensions import celery  # noqa: E402
 
 
 @celery.task(name="app.tasks.notification_tasks.send_notification", bind=True, max_retries=3, default_retry_delay=60)

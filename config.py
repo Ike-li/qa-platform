@@ -37,6 +37,7 @@ class BaseConfig:
     CELERY_RESULT_SERIALIZER = "json"
     CELERY_TIMEZONE = "UTC"
     CELERY_ENABLE_UTC = True
+    CELERY_TASK_PROTOCOL = 2
 
     # Allure
     ALLURE_REPORTS_DIR = os.getenv("ALLURE_REPORTS_DIR", "/app/allure-reports")

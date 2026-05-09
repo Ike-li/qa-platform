@@ -1,6 +1,5 @@
 """Authentication flow tests: login, logout, session, role-based access."""
 
-from app.models.user import Role, User
 
 
 class TestLogin:

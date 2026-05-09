@@ -320,7 +320,7 @@
         for (var i = 0; i < queue.length; i++) {
             var item = queue[i];
             html += "<tr>";
-            html += '<td><a href="' + (item.detail_url || "#") + '">' + (item.id || "--") + "</a></td>";
+            html += '<td><a href="' + safeUrl(item.detail_url) + '">' + escapeHtml(item.id || "--") + "</a></td>";
             html += "<td>" + escapeHtml(item.project_name || "--") + "</td>";
             html += "<td>" + escapeHtml(item.suite_name || "--") + "</td>";
             html += '<td><span class="badge badge-status ' + statusBadgeClass(item.status) + '">' +
@@ -569,6 +569,17 @@
         var div = document.createElement("div");
         div.appendChild(document.createTextNode(str));
         return div.innerHTML;
+    }
+
+    function safeUrl(url) {
+        if (!url) return "#";
+        try {
+            var parsed = new URL(url, window.location.origin);
+            if (parsed.protocol === "http:" || parsed.protocol === "https:") {
+                return parsed.href;
+            }
+        } catch (e) { /* invalid URL */ }
+        return "#";
     }
 
     // -----------------------------------------------------------------------

@@ -25,17 +25,14 @@ def _get_fernet():
     if _fernet is not None:
         return _fernet
     try:
-        import hashlib
         import os
 
         from cryptography.fernet import Fernet
 
-        # Derive a valid 32-url-safe-base64 key from SECRET_KEY
-        raw = os.getenv("FLASK_SECRET_KEY", os.getenv("SECRET_KEY", "change-me"))
-        key = hashlib.sha256(raw.encode()).digest()
-        import base64
-
-        _fernet = Fernet(base64.urlsafe_b64encode(key))
+        raw = os.getenv("FERNET_KEY", "")
+        if not raw:
+            return None
+        _fernet = Fernet(raw.encode() if isinstance(raw, str) else raw)
         return _fernet
     except Exception:
         logger.warning("Fernet not available – encrypted values stored in plaintext")

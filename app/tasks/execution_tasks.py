@@ -164,7 +164,7 @@ def _cleanup_venv(venv_path: str) -> None:
         logger.warning("Failed to clean up venv %s: %s", venv_path, exc)
 
 
-from app.utils.git import build_clone_url as _build_clone_url
+from app.utils.git import build_clone_url as _build_clone_url  # noqa: E402
 
 
 def _venv_path(execution_id: int) -> str:
@@ -530,7 +530,7 @@ def stage_generate_report(self, execution_id: int) -> int:
         if os.path.isdir(report_dir):
             shutil.rmtree(report_dir)
 
-        result = subprocess.run(
+        subprocess.run(
             ["allure", "generate", results_dir, "-o", report_dir, "--clean"],
             capture_output=True,
             text=True,
