@@ -4,11 +4,9 @@ Roles: super_admin, project_lead, tester, visitor
 Expected: 200 (allowed), 302 (redirect to login), 403 (forbidden)
 """
 
-from unittest.mock import MagicMock, patch
 
 import pytest
 
-from app.models.user import Role
 
 
 # ---------------------------------------------------------------------------

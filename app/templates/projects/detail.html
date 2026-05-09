@@ -2,7 +2,38 @@
 
 {% block title %}{{ project.name }} - QA Platform{% endblock %}
 
+{% block extra_css %}
+<style>
+.spin { animation: spin 1s linear infinite; }
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+</style>
+{% endblock %}
+
 {% block content %}
+<!-- Real-time sync progress panel (hidden by default) -->
+<div id="syncProgress" class="card mb-3" style="display: none;">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-arrow-repeat spin"></i> <span id="syncTitle">正在同步...</span></span>
+        <span id="syncStepBadge" class="badge bg-info">--</span>
+    </div>
+    <div class="card-body">
+        <!-- Step progress -->
+        <div class="d-flex gap-3 mb-3" id="syncSteps">
+            <span class="badge bg-secondary" data-step="cloning">克隆</span>
+            <span class="badge bg-secondary" data-step="installing_deps">安装依赖</span>
+            <span class="badge bg-secondary" data-step="discovering_tests">发现测试</span>
+            <span class="badge bg-secondary" data-step="complete">完成</span>
+        </div>
+        <!-- Git output terminal -->
+        <pre id="syncOutput" style="max-height: 300px; overflow-y: auto; background: #1e1e1e; color: #d4d4d4; padding: 1rem; border-radius: .5rem; font-size: .8rem; display: none;"></pre>
+        <!-- Error display -->
+        <div id="syncError" class="alert alert-danger" style="display: none;">
+            <span id="syncErrorMsg"></span>
+            <button class="btn btn-sm btn-outline-danger ms-2" onclick="location.reload()">重试</button>
+        </div>
+    </div>
+</div>
+
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h4>
         <i class="bi bi-folder-fill"></i> {{ project.name }}
@@ -10,18 +41,12 @@
     </h4>
     <div>
         {% if project.owner_id == current_user.id or current_user.has_role('super_admin') %}
-        <form method="post" action="{{ url_for('projects.clone_project', id=project.id) }}" class="d-inline">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <button type="submit" class="btn btn-sm btn-outline-success">
-                <i class="bi bi-download"></i> 克隆
-            </button>
-        </form>
-        <form method="post" action="{{ url_for('projects.pull_project', id=project.id) }}" class="d-inline">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <button type="submit" class="btn btn-sm btn-outline-info">
-                <i class="bi bi-arrow-down-circle"></i> 重新拉取
-            </button>
-        </form>
+        <button type="button" class="btn btn-sm btn-outline-success" id="btnClone" onclick="startSync('clone')">
+            <i class="bi bi-download"></i> 克隆
+        </button>
+        <button type="button" class="btn btn-sm btn-outline-info" id="btnPull" onclick="startSync('pull')">
+            <i class="bi bi-arrow-down-circle"></i> 重新拉取
+        </button>
         <form method="post" action="{{ url_for('projects.discover_project', id=project.id) }}" class="d-inline">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button type="submit" class="btn btn-sm btn-outline-warning">
@@ -163,4 +188,98 @@
         <i class="bi bi-arrow-left"></i> 返回项目列表
     </a>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='vendor/socket.io.min.js') }}"></script>
+<script>
+(function() {
+    var projectId = {{ project.id }};
+    var socket = null;
+    var outputEl = document.getElementById('syncOutput');
+    var progressEl = document.getElementById('syncProgress');
+    var titleEl = document.getElementById('syncTitle');
+    var badgeEl = document.getElementById('syncStepBadge');
+    var errorEl = document.getElementById('syncError');
+    var errorMsgEl = document.getElementById('syncErrorMsg');
+
+    // Start sync via AJAX (no page reload)
+    function startSync(action) {
+        var csrfToken = document.querySelector('meta[name="csrf-token"]') ?
+            document.querySelector('meta[name="csrf-token"]').content :
+            document.querySelector('[name=csrf_token]') ?
+            document.querySelector('[name=csrf_token]').value : '';
+        var url = '/projects/' + projectId + '/' + action;
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': csrfToken
+            },
+            body: 'csrf_token=' + encodeURIComponent(csrfToken)
+        }).then(function(resp) {
+            if (resp.ok || resp.status === 302) {
+                // Show progress panel, disable buttons
+                progressEl.style.display = 'block';
+                document.getElementById('btnClone').disabled = true;
+                document.getElementById('btnPull').disabled = true;
+                outputEl.textContent = '';
+                outputEl.style.display = 'block';
+            }
+        }).catch(function(err) {
+            console.warn('Sync request failed:', err);
+            // Graceful degradation: fall back to form POST
+            var form = document.createElement('form');
+            form.method = 'POST';
+            form.action = url;
+            var csrf = document.createElement('input');
+            csrf.type = 'hidden'; csrf.name = 'csrf_token'; csrf.value = csrfToken;
+            form.appendChild(csrf);
+            document.body.appendChild(form);
+            form.submit();
+        });
+    }
+
+    function connectSocketIO() {
+        try {
+            socket = io();
+            socket.on('connect', function() {
+                socket.emit('join_sync_room', {project_id: projectId});
+            });
+            socket.on('sync_step', function(data) {
+                progressEl.style.display = 'block';
+                // Update step badges
+                var steps = document.querySelectorAll('#syncSteps .badge');
+                var stepOrder = ['cloning', 'installing_deps', 'discovering_tests', 'complete'];
+                var currentIdx = stepOrder.indexOf(data.step);
+                steps.forEach(function(el, i) {
+                    if (i < currentIdx) { el.className = 'badge bg-success'; }
+                    else if (i === currentIdx) { el.className = 'badge bg-primary'; }
+                    else { el.className = 'badge bg-secondary'; }
+                });
+                badgeEl.textContent = data.step;
+                titleEl.textContent = {cloning:'正在克隆...', installing_deps:'正在安装依赖...', discovering_tests:'正在发现测试...', complete:'同步完成！', error:'同步失败'}[data.step] || '正在同步...';
+                if (data.step === 'complete') {
+                    badgeEl.className = 'badge bg-success';
+                    setTimeout(function() { location.reload(); }, 2000);
+                }
+                if (data.step === 'error') {
+                    errorEl.style.display = 'block';
+                    errorMsgEl.textContent = data.message || '未知错误';
+                    badgeEl.className = 'badge bg-danger';
+                }
+            });
+            socket.on('git_output', function(data) {
+                outputEl.style.display = 'block';
+                outputEl.textContent += data.line + '\n';
+                outputEl.scrollTop = outputEl.scrollHeight;
+            });
+        } catch(e) {
+            // Graceful degradation: WebSocket unavailable, buttons still work via POST
+            console.warn('SocketIO not available:', e);
+        }
+    }
+    connectSocketIO();
+})();
+</script>
 {% endblock %}

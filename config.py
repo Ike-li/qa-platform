@@ -53,6 +53,10 @@ class BaseConfig:
     EXECUTION_RESULTS_DIR = os.getenv("EXECUTION_RESULTS_DIR", "/data/execution_results")
     REPO_DIR = os.getenv("REPO_DIR", "/data/repos")
 
+    # SocketIO
+    SOCKETIO_ASYNC_MODE = "threading"
+    SOCKETIO_MESSAGE_QUEUE = os.getenv("CELERY_BROKER_URL", "redis://redis:6379/0")
+
 
 class DevConfig(BaseConfig):
     """Development configuration."""

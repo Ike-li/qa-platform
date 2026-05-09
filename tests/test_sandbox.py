@@ -1,14 +1,12 @@
 """Sandbox isolation tests — all Docker SDK interactions are mocked."""
 
 import os
-from unittest.mock import MagicMock, patch, PropertyMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 
 from app.tasks.sandbox import (
     CONTAINER_RESULTS,
-    CONTAINER_VENV,
-    CONTAINER_WORKSPACE,
     SandboxConfigError,
     SandboxRunner,
     SandboxRuntimeError,

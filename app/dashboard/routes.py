@@ -1,7 +1,7 @@
 """Dashboard routes: main page and JSON API endpoints."""
 
 from flask import jsonify, render_template, request
-from flask_login import current_user, login_required
+from flask_login import login_required
 
 from app.dashboard import dashboard_bp
 from app.dashboard.services import (

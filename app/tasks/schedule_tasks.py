@@ -16,7 +16,7 @@ def run_cron_schedule(self, schedule_id: int) -> None:
     and dispatches the execution pipeline.
     """
     from app.models.cron_schedule import CronSchedule
-    from app.models.execution import Execution, ExecutionStatus, TriggerType
+    from app.models.execution import TriggerType
     from app.executions.services import prepare_execution
     from app.tasks.execution_tasks import run_execution_pipeline
 

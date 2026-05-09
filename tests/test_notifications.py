@@ -1,13 +1,11 @@
 """Notification service tests with mocked HTTP calls."""
 
-from unittest.mock import MagicMock, patch, call
+from unittest.mock import MagicMock, patch
 import json
 
 from app.models.notification import (
     NotificationChannel,
     NotificationConfig,
-    NotificationDeliveryStatus,
-    NotificationLog,
 )
 
 

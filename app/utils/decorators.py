@@ -1,7 +1,6 @@
 """Cross-cutting decorators for the application."""
 
 import functools
-import time
 
 from flask import current_app, request
 

@@ -5,7 +5,7 @@ Registered as a Celery Beat task that runs once per day.
 
 import logging
 
-from app.extensions import celery, db
+from app.extensions import celery
 
 logger = logging.getLogger(__name__)
 

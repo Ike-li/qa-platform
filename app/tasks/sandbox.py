@@ -15,7 +15,6 @@ both must be updated together.
 
 import logging
 import os
-import sys
 
 import docker
 from docker.errors import ContainerError, DockerException, ImageNotFound, APIError

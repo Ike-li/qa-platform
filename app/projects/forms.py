@@ -2,7 +2,7 @@
 
 from flask_wtf import FlaskForm
 from wtforms import PasswordField, StringField, TextAreaField
-from wtforms.validators import DataRequired, Length, Optional, URL
+from wtforms.validators import DataRequired, Length, Optional
 
 
 class ProjectForm(FlaskForm):

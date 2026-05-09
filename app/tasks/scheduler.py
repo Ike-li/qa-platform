@@ -9,7 +9,6 @@ import logging
 import time
 
 from celery.beat import Scheduler, ScheduleEntry
-from celery.schedules import crontab as celery_crontab
 
 logger = logging.getLogger(__name__)
 

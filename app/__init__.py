@@ -3,7 +3,7 @@ import os
 from flask import Flask, jsonify, redirect, render_template, request, url_for
 
 from config import config_by_name
-from app.extensions import csrf, db, login_manager, mail, migrate
+from app.extensions import csrf, db, login_manager, mail, migrate, socketio
 
 
 def create_app(config_name=None):
@@ -21,6 +21,8 @@ def create_app(config_name=None):
     migrate.init_app(app, db)
     csrf.init_app(app)
     mail.init_app(app)
+    socketio.init_app(app, async_mode="threading", message_queue=app.config.get("SOCKETIO_MESSAGE_QUEUE"))
+    csrf.exempt("/socketio/")
 
     # Configure Flask-Login
     _configure_login(app)

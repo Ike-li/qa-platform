@@ -2,7 +2,6 @@
 
 from unittest.mock import MagicMock, patch
 
-from app.models.api_token import ApiToken
 
 
 class TestTokenAuthentication:

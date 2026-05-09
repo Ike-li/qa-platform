@@ -8,7 +8,7 @@ handling.
 
 import logging
 
-from flask import Blueprint, jsonify, render_template, request
+from flask import jsonify, render_template, request
 
 logger = logging.getLogger(__name__)
 

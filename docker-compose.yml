@@ -35,7 +35,7 @@ services:
     build: .
     restart: unless-stopped
     entrypoint: ["/app/docker-entrypoint.sh"]
-    command: ["gunicorn", "--workers", "4", "--bind", "0.0.0.0:5000", "--timeout", "120", "app:create_app()"]
+    command: ["gunicorn", "--worker-class", "gthread", "--workers", "1", "--threads", "100", "--bind", "0.0.0.0:5000", "--timeout", "120", "app:create_app()"]
     env_file:
       - .env
     environment:
@@ -89,9 +89,10 @@ services:
     volumes:
       - allure-reports:/app/allure-reports
       - allure-results:/app/allure-results
-      - /data/repos:/data/repos
-      - /data/venvs:/data/venvs
-      - /data/execution_results:/data/execution_results
+      # Sandbox volume mounts (uncomment when ENABLE_SANDBOX=true):
+      # - /data/repos:/data/repos
+      # - /data/venvs:/data/venvs
+      # - /data/execution_results:/data/execution_results
     depends_on:
       mysql:
         condition: service_healthy

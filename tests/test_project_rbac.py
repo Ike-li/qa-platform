@@ -11,7 +11,6 @@ Tests cover:
 
 import pytest
 
-from app.extensions import db
 from app.models.project import Project
 from app.models.project_membership import (
     PROJECT_ROLE_PERMISSIONS,
