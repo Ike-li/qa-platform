@@ -446,8 +446,7 @@ def stage_run_tests(self, execution_id: int) -> int:
         except SandboxConfigError as exc:
             _fail_execution(execution, f"Sandbox configuration error: {exc}", cleanup_venv=venv_path)
         except SandboxRuntimeError as exc:
-            logger.warning("Sandbox failed (%s), falling back to subprocess", exc)
-            use_sandbox = False  # fall through to subprocess below
+            _fail_execution(execution, f"Sandbox runtime error: {exc}", cleanup_venv=venv_path)
 
     if not use_sandbox:
         try:

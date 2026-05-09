@@ -50,10 +50,15 @@ def rate_limit(f):
             if current_count > _RATE_LIMIT_MAX:
                 return jsonify({"error": "Rate limit exceeded. Max 10 requests per minute."}), 429
         except Exception:
-            logger.warning(
-                "Rate-limit check failed for token %d, allowing request",
-                g.api_token.id,
-            )
+            from flask import current_app
+            if current_app.config.get("TESTING"):
+                logger.warning("Rate-limit check skipped in testing mode")
+            else:
+                logger.error(
+                    "Rate-limit check failed for token %d, denying request",
+                    g.api_token.id,
+                )
+                return jsonify({"error": "Service temporarily unavailable."}), 503
         return f(*args, **kwargs)
 
     return decorated

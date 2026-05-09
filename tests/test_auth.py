@@ -123,8 +123,8 @@ class TestPasswordChange:
             data={
                 "email": "admin@test.com",
                 "current_password": "admin123",
-                "new_password": "newsecurepass123",
-                "confirm_password": "newsecurepass123",
+                "new_password": "NewSecurePass123",
+                "confirm_password": "NewSecurePass123",
             },
             follow_redirects=False,
         )
@@ -137,8 +137,8 @@ class TestPasswordChange:
             data={
                 "email": "admin@test.com",
                 "current_password": "wrongcurrent",
-                "new_password": "newsecurepass123",
-                "confirm_password": "newsecurepass123",
+                "new_password": "NewSecurePass123",
+                "confirm_password": "NewSecurePass123",
             },
             follow_redirects=False,
         )

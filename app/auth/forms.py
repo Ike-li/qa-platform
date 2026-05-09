@@ -2,7 +2,7 @@
 
 from flask_wtf import FlaskForm
 from wtforms import BooleanField, PasswordField, StringField
-from wtforms.validators import DataRequired, Email, EqualTo, Length, Optional
+from wtforms.validators import DataRequired, Email, EqualTo, Length, Optional, Regexp
 
 
 class LoginForm(FlaskForm):
@@ -35,6 +35,8 @@ class ProfileForm(FlaskForm):
         validators=[
             Optional(),
             Length(min=8, message="Password must be at least 8 characters."),
+            Regexp(r".*[A-Z].*", message="Must contain an uppercase letter."),
+            Regexp(r".*[0-9].*", message="Must contain a digit."),
         ],
     )
     confirm_password = PasswordField(
