@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}Trigger Execution - {{ project.name }} - QA Platform{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-play-fill"></i> Trigger Test Execution
+                    <span class="badge bg-secondary fs-6">{{ project.name }}</span>
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="post" novalidate>
+                    {{ form.hidden_tag() }}
+
+                    <div class="mb-3">
+                        <label for="suite_id" class="form-label">Test Suite</label>
+                        {{ form.suite_id(class="form-select", id="suite_id") }}
+                        {% for error in form.suite_id.errors %}
+                        <div class="text-danger small mt-1">{{ error }}</div>
+                        {% endfor %}
+                        <div class="form-text">
+                            Select a specific suite or leave as "All Suites" to run the entire project.
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="extra_args" class="form-label">Extra Pytest Arguments</label>
+                        {{ form.extra_args(class="form-control", id="extra_args", rows="3",
+                            placeholder="e.g. -k 'smoke' --timeout=60 -x") }}
+                        {% for error in form.extra_args.errors %}
+                        <div class="text-danger small mt-1">{{ error }}</div>
+                        {% endfor %}
+                        <div class="form-text">
+                            Optional additional CLI arguments passed to pytest.
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('projects.detail_project', id=project.id) }}"
+                           class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left"></i> Back to Project
+                        </a>
+                        <button type="submit" class="btn btn-primary"
+                                onclick="this.disabled=true; this.form.submit();">
+                            <i class="bi bi-play-fill"></i> Start Execution
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="bi bi-info-circle"></i> Execution Pipeline</h6>
+            </div>
+            <div class="card-body small">
+                <p>Each execution runs a three-stage pipeline:</p>
+                <ol>
+                    <li>
+                        <strong>Git Sync</strong> - Clone or pull the repository,
+                        create a Python virtualenv, install dependencies.
+                    </li>
+                    <li>
+                        <strong>Run Tests</strong> - Execute pytest with Allure
+                        and JUnit XML output.
+                    </li>
+                    <li>
+                        <strong>Generate Report</strong> - Build the Allure HTML
+                        report from test results.
+                    </li>
+                </ol>
+                <p class="mb-0 text-muted">
+                    <i class="bi bi-shield-lock"></i>
+                    Max {{ 3 }} parallel executions.
+                    The venv is cleaned up after completion.
+                </p>
+            </div>
+        </div>
+
+        {% if suites %}
+        <div class="card shadow-sm mt-3">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="bi bi-collection"></i> Available Suites</h6>
+            </div>
+            <ul class="list-group list-group-flush">
+                {% for suite in suites %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong>{{ suite.name }}</strong>
+                        <br><code class="small text-muted">{{ suite.path_in_repo }}</code>
+                    </div>
+                    <span class="badge bg-{{ 'info' if suite.test_type.value == 'API' else 'warning text-dark' if suite.test_type.value == 'UI' else 'danger' if suite.test_type.value == 'PERFORMANCE' else 'success' }}">
+                        {{ suite.test_type.value }}
+                    </span>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

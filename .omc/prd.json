@@ -1,0 +1,103 @@
+{
+  "stories": [
+    {
+      "id": "US-001",
+      "title": "Fix extra_args command injection vulnerability",
+      "priority": 1,
+      "passes": true,
+      "acceptanceCriteria": [
+        "extra_args is parsed with shlex.split() and validated against a whitelist of allowed pytest flags",
+        "Disallowed flags raise ValueError and prevent execution",
+        "Allowed flags: -k, --timeout, -x, --tb, -v, -q, --co, --maxfail, -m"
+      ],
+      "files": ["app/tasks/execution_tasks.py"]
+    },
+    {
+      "id": "US-002",
+      "title": "Enforce SECRET_KEY and FERNET_KEY from environment",
+      "priority": 2,
+      "passes": true,
+      "acceptanceCriteria": [
+        "config.py raises ValueError on startup if SECRET_KEY is missing or set to 'change-me'",
+        "config.py raises ValueError on startup if FERNET_KEY is missing or empty",
+        "TestConfig exempt from this check",
+        ".env.example documents both keys with generation instructions"
+      ],
+      "files": ["config.py"]
+    },
+    {
+      "id": "US-003",
+      "title": "Add run_cron_schedule Celery task for Cron trigger",
+      "priority": 3,
+      "passes": true,
+      "acceptanceCriteria": [
+        "run_cron_schedule task exists in app/tasks/execution_tasks.py or schedule_tasks.py",
+        "Task accepts schedule_id, loads CronSchedule, calls prepare_execution with TriggerType.CRON",
+        "DatabaseScheduler entries reference the task name correctly",
+        "Cron schedule with is_active=True triggers execution when beat fires"
+      ],
+      "files": ["app/tasks/execution_tasks.py", "app/tasks/scheduler.py", "app/tasks/schedule_tasks.py"]
+    },
+    {
+      "id": "US-004",
+      "title": "Fix has_role string vs Role enum mismatch in templates",
+      "priority": 4,
+      "passes": true,
+      "acceptanceCriteria": [
+        "User.has_role() accepts both Role enum and string arguments",
+        "base.html admin menu correctly visible for super_admin users",
+        "All has_role() calls in templates work correctly"
+      ],
+      "files": ["app/models/user.py", "app/templates/base.html"]
+    },
+    {
+      "id": "US-005",
+      "title": "Add RBAC permission check to API execution endpoint",
+      "priority": 5,
+      "passes": true,
+      "acceptanceCriteria": [
+        "POST /api/v1/executions checks execution.trigger permission",
+        "Visitor-role user with API token gets 403",
+        "Tester/Project_lead/Super_admin can trigger via API"
+      ],
+      "files": ["app/api/executions.py"]
+    },
+    {
+      "id": "US-006",
+      "title": "Add rollback protection to route commits",
+      "priority": 6,
+      "passes": true,
+      "acceptanceCriteria": [
+        "All db.session.commit() calls in route handlers are wrapped in try/except",
+        "On IntegrityError or other DB error, session is rolled back before re-raising",
+        "Affected files: auth/routes.py, projects/routes.py, executions/routes.py"
+      ],
+      "files": ["app/auth/routes.py", "app/projects/routes.py", "app/executions/routes.py"]
+    },
+    {
+      "id": "US-007",
+      "title": "Add @celery.task decorator to send_notification",
+      "priority": 7,
+      "passes": true,
+      "acceptanceCriteria": [
+        "send_notification has @celery.task decorator with bind=True, max_retries=3",
+        "Task uses self.retry() for retryable failures",
+        "Task is properly registered and callable via .delay()"
+      ],
+      "files": ["app/tasks/notification_tasks.py"]
+    },
+    {
+      "id": "US-008",
+      "title": "Add rate limiting to login endpoint",
+      "priority": 8,
+      "passes": true,
+      "acceptanceCriteria": [
+        "Login endpoint limits to 5 failed attempts per IP per minute",
+        "Rate limit uses Redis counter",
+        "Exceeded limit returns 429 with retry-after message",
+        "Successful login resets the counter"
+      ],
+      "files": ["app/auth/routes.py"]
+    }
+  ]
+}

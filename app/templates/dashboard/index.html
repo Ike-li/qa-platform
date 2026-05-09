@@ -1,0 +1,208 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - QA Platform{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dashboard-card {
+        border: none;
+        border-radius: .75rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, .08);
+        transition: box-shadow .2s;
+    }
+    .dashboard-card:hover {
+        box-shadow: 0 4px 16px rgba(0, 0, 0, .12);
+    }
+    .dashboard-card .card-header {
+        background-color: #fff;
+        border-bottom: 1px solid #e9ecef;
+        font-weight: 600;
+        font-size: .95rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    .chart-container {
+        position: relative;
+        width: 100%;
+        max-height: 300px;
+    }
+    .chart-container canvas {
+        max-height: 300px;
+    }
+    .badge-status {
+        font-size: .75rem;
+        text-transform: capitalize;
+    }
+    .table-queue td, .table-queue th {
+        vertical-align: middle;
+        white-space: nowrap;
+    }
+    .table-failures td {
+        vertical-align: middle;
+    }
+    .table-failures .error-snippet {
+        max-width: 300px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .granularity-toggle .btn {
+        font-size: .8rem;
+        padding: .25rem .75rem;
+    }
+    #spinner-overlay {
+        display: none;
+        position: absolute;
+        inset: 0;
+        background: rgba(255, 255, 255, .7);
+        z-index: 10;
+        align-items: center;
+        justify-content: center;
+        border-radius: .75rem;
+    }
+    #spinner-overlay.active {
+        display: flex;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="position-relative">
+    <!-- Page header with project filter -->
+    <div class="d-flex flex-wrap align-items-center justify-content-between mb-4">
+        <h4 class="mb-0">
+            <i class="bi bi-speedometer2 me-2"></i>Dashboard
+        </h4>
+        <div class="d-flex align-items-center gap-2">
+            <label for="projectFilter" class="form-label mb-0 text-muted small">Project:</label>
+            <select id="projectFilter" class="form-select form-select-sm" style="width: auto;">
+                <option value="">-- Select Project --</option>
+                {% for p in projects %}
+                <option value="{{ p.id }}">{{ p.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+
+    <!-- No-project-selected placeholder -->
+    <div id="noProjectMsg" class="text-center text-muted py-5">
+        <i class="bi bi-arrow-up-circle fs-1"></i>
+        <p class="mt-2">Please select a project to view the dashboard.</p>
+    </div>
+
+    <!-- Dashboard grid (hidden until a project is selected) -->
+    <div id="dashboardGrid" style="display: none;">
+        <div class="row g-4">
+
+            <!-- 1. Pass Rate Overview -->
+            <div class="col-lg-4 col-md-6">
+                <div class="card dashboard-card h-100">
+                    <div class="card-header">
+                        <span><i class="bi bi-pie-chart me-1"></i> Pass Rate Overview</span>
+                        <span id="passRateBadge" class="badge bg-secondary">--</span>
+                    </div>
+                    <div class="card-body d-flex flex-column align-items-center justify-content-center">
+                        <div class="chart-container" style="max-width: 260px;">
+                            <canvas id="passRateChart"></canvas>
+                        </div>
+                        <div id="passRateSummary" class="text-muted small mt-2 text-center"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. Trend Analysis -->
+            <div class="col-lg-8 col-md-6">
+                <div class="card dashboard-card h-100">
+                    <div class="card-header">
+                        <span><i class="bi bi-graph-up me-1"></i> Trend Analysis</span>
+                        <div class="btn-group granularity-toggle" role="group" aria-label="Granularity">
+                            <button type="button" class="btn btn-outline-primary active" data-granularity="daily">Daily</button>
+                            <button type="button" class="btn btn-outline-primary" data-granularity="weekly">Weekly</button>
+                            <button type="button" class="btn btn-outline-primary" data-granularity="monthly">Monthly</button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="trendChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. Execution Queue -->
+            <div class="col-lg-6">
+                <div class="card dashboard-card">
+                    <div class="card-header">
+                        <span><i class="bi bi-hourglass-split me-1"></i> Execution Queue</span>
+                        <span id="queueCountBadge" class="badge bg-info">0</span>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover table-sm mb-0 table-queue">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Project</th>
+                                        <th>Suite</th>
+                                        <th>Status</th>
+                                        <th>Stage</th>
+                                        <th>Elapsed</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="queueBody">
+                                    <tr>
+                                        <td colspan="6" class="text-center text-muted py-4">No active executions</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. Failed Tests -->
+            <div class="col-lg-6">
+                <div class="card dashboard-card">
+                    <div class="card-header">
+                        <span><i class="bi bi-exclamation-triangle me-1"></i> Failed Tests</span>
+                        <span id="failureCountBadge" class="badge bg-danger">0</span>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover table-sm mb-0 table-failures">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Test Name</th>
+                                        <th>Suite / File</th>
+                                        <th>Error Snippet</th>
+                                        <th>Report</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="failuresBody">
+                                    <tr>
+                                        <td colspan="4" class="text-center text-muted py-4">Select a project to view failures</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Loading overlay -->
+    <div id="spinner-overlay">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+{% endblock %}

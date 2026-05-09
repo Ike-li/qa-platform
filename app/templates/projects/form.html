@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+
+{% block title %}{% if editing %}Edit Project{% else %}New Project{% endif %} - QA Platform{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    {% if editing %}
+                    <i class="bi bi-pencil"></i> Edit Project: {{ project.name }}
+                    {% else %}
+                    <i class="bi bi-folder-plus"></i> Create New Project
+                    {% endif %}
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="post" novalidate>
+                    {{ form.hidden_tag() }}
+
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Project Name</label>
+                        {{ form.name(class="form-control", id="name", placeholder="e.g. My QA Project") }}
+                        {% for error in form.name.errors %}
+                        <div class="text-danger small mt-1">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="git_url" class="form-label">Git Repository URL</label>
+                        {{ form.git_url(class="form-control", id="git_url", placeholder="https://github.com/org/repo.git") }}
+                        {% for error in form.git_url.errors %}
+                        <div class="text-danger small mt-1">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="git_branch" class="form-label">Branch</label>
+                            {{ form.git_branch(class="form-control", id="git_branch", placeholder="main") }}
+                            {% for error in form.git_branch.errors %}
+                            <div class="text-danger small mt-1">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        <div class="col-md-6">
+                            <label for="git_credential" class="form-label">
+                                Git Credential / Token
+                                {% if editing %}
+                                <small class="text-muted">(leave blank to keep current)</small>
+                                {% endif %}
+                            </label>
+                            {{ form.git_credential(class="form-control", id="git_credential", placeholder="Personal access token") }}
+                            {% for error in form.git_credential.errors %}
+                            <div class="text-danger small mt-1">{{ error }}</div>
+                            {% endfor %}
+                            <div class="form-text">
+                                <i class="bi bi-lock"></i> Encrypted before storage. Never displayed after saving.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        {{ form.description(class="form-control", id="description", rows="3", placeholder="Brief description of the project...") }}
+                        {% for error in form.description.errors %}
+                        <div class="text-danger small mt-1">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        {% if editing %}
+                        <a href="{{ url_for('projects.detail_project', id=project.id) }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left"></i> Back
+                        </a>
+                        {% else %}
+                        <a href="{{ url_for('projects.list_projects') }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left"></i> Back
+                        </a>
+                        {% endif %}
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-lg"></i>
+                            {% if editing %}Save Changes{% else %}Create Project{% endif %}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="bi bi-info-circle"></i> Tips</h6>
+            </div>
+            <div class="card-body small">
+                <dl>
+                    <dt>Git URL</dt>
+                    <dd>HTTPS or SSH URL to the repository containing your test code.</dd>
+                    <dt>Branch</dt>
+                    <dd>The branch to clone and pull from. Defaults to <code>main</code>.</dd>
+                    <dt>Credential</dt>
+                    <dd>
+                        A personal access token or password for HTTPS authentication.
+                        The credential is encrypted with Fernet before storage and is
+                        <strong>never</strong> displayed after saving.
+                    </dd>
+                    <dt>Suite Discovery</dt>
+                    <dd>
+                        After creating a project, clone the repo and run
+                        <strong>Re-discover</strong> to scan for <code>test_*.py</code> files.
+                    </dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block title %}{% if editing %}Edit User{% else %}Create User{% endif %} - QA Platform{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    {% if editing %}
+                    <i class="bi bi-pencil"></i> Edit User: {{ user.username }}
+                    {% else %}
+                    <i class="bi bi-person-plus"></i> Create New User
+                    {% endif %}
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="post" novalidate>
+                    {{ form.hidden_tag() }}
+
+                    <div class="mb-3">
+                        <label for="username" class="form-label">Username</label>
+                        {{ form.username(class="form-control", id="username", placeholder="Enter username") }}
+                        {% for error in form.username.errors %}
+                        <div class="text-danger small mt-1">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email</label>
+                        {{ form.email(class="form-control", id="email", placeholder="user@example.com") }}
+                        {% for error in form.email.errors %}
+                        <div class="text-danger small mt-1">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="role" class="form-label">Role</label>
+                        {{ form.role(class="form-select", id="role") }}
+                        {% for error in form.role.errors %}
+                        <div class="text-danger small mt-1">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="password" class="form-label">
+                            Password
+                            {% if editing %}
+                            <small class="text-muted">(leave blank to keep current)</small>
+                            {% endif %}
+                        </label>
+                        {{ form.password(class="form-control", id="password", placeholder="Enter password") }}
+                        {% for error in form.password.errors %}
+                        <div class="text-danger small mt-1">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="mb-3 form-check">
+                        {{ form.is_active(class="form-check-input", id="is_active") }}
+                        <label class="form-check-label" for="is_active">Active</label>
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('admin.list_users') }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left"></i> Back
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-lg"></i>
+                            {% if editing %}Save Changes{% else %}Create User{% endif %}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="bi bi-info-circle"></i> Role Permissions</h6>
+            </div>
+            <div class="card-body small">
+                <dl>
+                    <dt>Super Admin</dt>
+                    <dd>Full access to all features, users, and configuration.</dd>
+                    <dt>Project Lead</dt>
+                    <dd>Create/edit projects, trigger executions, view reports.</dd>
+                    <dt>Tester</dt>
+                    <dd>Trigger executions, view executions and reports.</dd>
+                    <dt>Visitor</dt>
+                    <dd>Read-only access to executions and reports.</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

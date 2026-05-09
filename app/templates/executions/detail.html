@@ -1,0 +1,400 @@
+{% extends "base.html" %}
+
+{% block title %}Execution #{{ execution.id }} - QA Platform{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4>
+        <i class="bi bi-play-circle"></i> Execution #{{ execution.id }}
+        <span class="badge bg-{{ execution.status_badge_class }} fs-6">{{ execution.status.value }}</span>
+    </h4>
+    <div>
+        {% if execution.allure_report %}
+        <a href="{{ execution.allure_report.report_url }}" class="btn btn-success" target="_blank">
+            <i class="bi bi-bar-chart"></i> View Allure Report
+        </a>
+        {% endif %}
+        <a href="{{ url_for('executions.list_executions') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Back to List
+        </a>
+    </div>
+</div>
+
+<!-- Stage Timeline -->
+<div class="card shadow-sm mb-4">
+    <div class="card-header">
+        <h6 class="mb-0"><i class="bi bi-diagram-3"></i> Pipeline Stages</h6>
+    </div>
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center">
+            {% set stages = [
+                ('pending', 'Queued', 'bi-hourglass-split'),
+                ('cloned', 'Git Synced', 'bi-git'),
+                ('running', 'Running', 'bi-gear'),
+                ('executed', 'Tests Done', 'bi-check2-circle'),
+                ('completed', 'Report Ready', 'bi-file-earmark-bar-graph'),
+            ] %}
+            {% set status_order = ['pending', 'cloned', 'running', 'executed', 'completed'] %}
+            {% set current_idx = status_order.index(execution.status.value) if execution.status.value in status_order else -1 %}
+
+            {% for stage_val, stage_label, stage_icon in stages %}
+            <div class="text-center" style="flex: 1;">
+                {% set stage_idx = loop.index0 %}
+                {% if execution.status.value == 'failed' or execution.status.value == 'timeout' %}
+                    {% if stage_idx <= current_idx %}
+                    <div class="rounded-circle d-inline-flex align-items-center justify-content-center bg-danger text-white"
+                         style="width: 48px; height: 48px;">
+                        <i class="bi {{ stage_icon }}"></i>
+                    </div>
+                    {% else %}
+                    <div class="rounded-circle d-inline-flex align-items-center justify-content-center bg-light text-muted border"
+                         style="width: 48px; height: 48px;">
+                        <i class="bi {{ stage_icon }}"></i>
+                    </div>
+                    {% endif %}
+                {% elif stage_idx <= current_idx %}
+                <div class="rounded-circle d-inline-flex align-items-center justify-content-center bg-success text-white"
+                     style="width: 48px; height: 48px;">
+                    <i class="bi {{ stage_icon }}"></i>
+                </div>
+                {% elif stage_idx == current_idx + 1 and not execution.is_terminal %}
+                <div class="rounded-circle d-inline-flex align-items-center justify-content-center bg-primary text-white"
+                     style="width: 48px; height: 48px;">
+                    <i class="bi {{ stage_icon }} spinning"></i>
+                </div>
+                {% else %}
+                <div class="rounded-circle d-inline-flex align-items-center justify-content-center bg-light text-muted border"
+                     style="width: 48px; height: 48px;">
+                    <i class="bi {{ stage_icon }}"></i>
+                </div>
+                {% endif %}
+                <div class="small mt-1 {% if stage_idx <= current_idx %}fw-bold{% endif %}">
+                    {{ stage_label }}
+                </div>
+            </div>
+            {% if not loop.last %}
+            <div style="flex: 0.3; height: 2px;
+                 {% if stage_idx < current_idx %}background-color: #198754;
+                 {% elif stage_idx == current_idx %}background-color: #0d6efd;
+                 {% else %}background-color: #dee2e6;
+                 {% endif %}">
+            </div>
+            {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Execution Info -->
+    <div class="col-lg-4">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="bi bi-info-circle"></i> Execution Info</h6>
+            </div>
+            <div class="card-body">
+                <dl class="mb-0">
+                    <dt>Project</dt>
+                    <dd>
+                        <a href="{{ url_for('projects.detail_project', id=execution.project_id) }}">
+                            {{ execution.project.name if execution.project else '-' }}
+                        </a>
+                    </dd>
+
+                    <dt>Suite</dt>
+                    <dd>
+                        {% if execution.suite %}
+                        {{ execution.suite.name }} <code class="small">({{ execution.suite.path_in_repo }})</code>
+                        {% else %}
+                        All Suites
+                        {% endif %}
+                    </dd>
+
+                    <dt>Triggered By</dt>
+                    <dd>
+                        {% if execution.trigger_user %}
+                        {{ execution.trigger_user.username }}
+                        {% else %}
+                        <span class="text-muted">System</span>
+                        {% endif %}
+                        <span class="badge bg-secondary">{{ execution.trigger_type.value }}</span>
+                    </dd>
+
+                    <dt>Git Commit</dt>
+                    <dd>
+                        {% if execution.git_commit_sha %}
+                        <code>{{ execution.git_commit_sha[:12] }}</code>
+                        {% else %}
+                        <span class="text-muted">-</span>
+                        {% endif %}
+                    </dd>
+
+                    <dt>Exit Code</dt>
+                    <dd>
+                        {% if execution.exit_code is not none %}
+                        <span class="badge bg-{{ 'success' if execution.exit_code == 0 else 'danger' }}">
+                            {{ execution.exit_code }}
+                        </span>
+                        {% else %}
+                        <span class="text-muted">-</span>
+                        {% endif %}
+                    </dd>
+
+                    <dt>Duration</dt>
+                    <dd>
+                        {% if execution.duration_sec is not none %}
+                        {{ "%.2f"|format(execution.duration_sec) }}s
+                        {% else %}
+                        <span class="text-muted">-</span>
+                        {% endif %}
+                    </dd>
+
+                    <dt>Created</dt>
+                    <dd>{{ execution.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</dd>
+
+                    <dt>Started</dt>
+                    <dd>{{ execution.started_at.strftime('%Y-%m-%d %H:%M:%S') if execution.started_at else '-' }}</dd>
+
+                    <dt>Finished</dt>
+                    <dd>{{ execution.finished_at.strftime('%Y-%m-%d %H:%M:%S') if execution.finished_at else '-' }}</dd>
+
+                    {% if execution.celery_task_id %}
+                    <dt>Task ID</dt>
+                    <dd><code class="small">{{ execution.celery_task_id }}</code></dd>
+                    {% endif %}
+                </dl>
+            </div>
+        </div>
+
+        <!-- Summary Stats -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="bi bi-bar-chart"></i> Results Summary</h6>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-6 col-lg-3 mb-2">
+                        <h4 class="text-success">{{ counts.get('passed', 0) }}</h4>
+                        <small class="text-muted">Passed</small>
+                    </div>
+                    <div class="col-6 col-lg-3 mb-2">
+                        <h4 class="text-danger">{{ counts.get('failed', 0) }}</h4>
+                        <small class="text-muted">Failed</small>
+                    </div>
+                    <div class="col-6 col-lg-3 mb-2">
+                        <h4 class="text-warning">{{ counts.get('error', 0) }}</h4>
+                        <small class="text-muted">Errors</small>
+                    </div>
+                    <div class="col-6 col-lg-3 mb-2">
+                        <h4 class="text-secondary">{{ counts.get('skipped', 0) }}</h4>
+                        <small class="text-muted">Skipped</small>
+                    </div>
+                </div>
+                {% set total = counts.get('passed', 0) + counts.get('failed', 0) + counts.get('error', 0) + counts.get('skipped', 0) %}
+                {% if total > 0 %}
+                <div class="progress mt-2" style="height: 8px;">
+                    {% set pct_passed = (counts.get('passed', 0) / total * 100)|int %}
+                    {% set pct_failed = (counts.get('failed', 0) / total * 100)|int %}
+                    {% set pct_error = (counts.get('error', 0) / total * 100)|int %}
+                    {% set pct_skipped = (counts.get('skipped', 0) / total * 100)|int %}
+                    {% if pct_passed > 0 %}
+                    <div class="progress-bar bg-success" style="width: {{ pct_passed }}%"></div>
+                    {% endif %}
+                    {% if pct_failed > 0 %}
+                    <div class="progress-bar bg-danger" style="width: {{ pct_failed }}%"></div>
+                    {% endif %}
+                    {% if pct_error > 0 %}
+                    <div class="progress-bar bg-warning" style="width: {{ pct_error }}%"></div>
+                    {% endif %}
+                    {% if pct_skipped > 0 %}
+                    <div class="progress-bar bg-secondary" style="width: {{ pct_skipped }}%"></div>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Error Detail -->
+        {% if execution.error_detail %}
+        <div class="card shadow-sm mb-4 border-danger">
+            <div class="card-header bg-danger text-white">
+                <h6 class="mb-0"><i class="bi bi-exclamation-triangle"></i> Error</h6>
+            </div>
+            <div class="card-body">
+                <pre class="mb-0 small" style="white-space: pre-wrap; word-break: break-all;">{{ execution.error_detail }}</pre>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Test Results & Output -->
+    <div class="col-lg-8">
+        <!-- Allure Report Link -->
+        {% if execution.allure_report %}
+        <div class="alert alert-success d-flex align-items-center mb-4">
+            <i class="bi bi-file-earmark-bar-graph me-2 fs-4"></i>
+            <div>
+                <strong>Allure Report Available</strong>
+                <br>
+                <a href="{{ execution.allure_report.report_url }}" target="_blank" class="alert-link">
+                    Open Report
+                </a>
+                {% if execution.allure_report.file_size_mb %}
+                <small class="text-muted ms-2">({{ execution.allure_report.file_size_mb }} MB)</small>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Test Results Table -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="mb-0"><i class="bi bi-list-check"></i> Test Results</h6>
+                <span class="badge bg-primary">{{ results|length }} tests</span>
+            </div>
+            {% if results %}
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Test Name</th>
+                            <th>Status</th>
+                            <th>Duration</th>
+                            <th>Error</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for r in results %}
+                        <tr>
+                            <td>
+                                <strong>{{ r.name }}</strong>
+                                {% if r.file_path %}
+                                <br><code class="small text-muted">{{ r.file_path }}</code>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if r.status.value == 'passed' %}
+                                <span class="badge bg-success">Passed</span>
+                                {% elif r.status.value == 'failed' %}
+                                <span class="badge bg-danger">Failed</span>
+                                {% elif r.status.value == 'error' %}
+                                <span class="badge bg-warning text-dark">Error</span>
+                                {% else %}
+                                <span class="badge bg-secondary">Skipped</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if r.duration_sec is not none %}
+                                {{ "%.3f"|format(r.duration_sec) }}s
+                                {% else %}
+                                -
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if r.error_msg %}
+                                <button class="btn btn-sm btn-outline-danger" type="button"
+                                        data-bs-toggle="collapse" data-bs-target="#err-{{ r.id }}">
+                                    <i class="bi bi-exclamation-circle"></i> View
+                                </button>
+                                <div class="collapse mt-2" id="err-{{ r.id }}">
+                                    <pre class="small bg-light p-2 rounded" style="white-space: pre-wrap; max-height: 300px; overflow-y: auto;">{{ r.error_msg }}{% if r.stacktrace %}
+
+{{ r.stacktrace }}{% endif %}</pre>
+                                </div>
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="card-body text-center text-muted py-4">
+                {% if execution.is_terminal %}
+                <i class="bi bi-inbox" style="font-size: 2rem;"></i>
+                <p class="mt-2 mb-0">No test results recorded.</p>
+                {% else %}
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2 mb-0">Execution in progress...</p>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Stdout / Stderr -->
+        {% if execution.stdout or execution.stderr %}
+        <div class="card shadow-sm mb-4">
+            <div class="card-header">
+                <ul class="nav nav-tabs card-header-tabs" role="tablist">
+                    {% if execution.stdout %}
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" data-bs-toggle="tab"
+                                data-bs-target="#tab-stdout" type="button" role="tab">
+                            <i class="bi bi-terminal"></i> Stdout
+                        </button>
+                    </li>
+                    {% endif %}
+                    {% if execution.stderr %}
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link {% if not execution.stdout %}active{% endif %}"
+                                data-bs-toggle="tab" data-bs-target="#tab-stderr"
+                                type="button" role="tab">
+                            <i class="bi bi-exclamation-triangle"></i> Stderr
+                        </button>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+            <div class="card-body">
+                <div class="tab-content">
+                    {% if execution.stdout %}
+                    <div class="tab-pane fade show active" id="tab-stdout" role="tabpanel">
+                        <pre class="small bg-dark text-light p-3 rounded"
+                             style="white-space: pre-wrap; max-height: 500px; overflow-y: auto;">{{ execution.stdout }}</pre>
+                    </div>
+                    {% endif %}
+                    {% if execution.stderr %}
+                    <div class="tab-pane fade {% if not execution.stdout %}show active{% endif %}"
+                         id="tab-stderr" role="tabpanel">
+                        <pre class="small bg-dark text-warning p-3 rounded"
+                             style="white-space: pre-wrap; max-height: 500px; overflow-y: auto;">{{ execution.stderr }}</pre>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="mt-3">
+    <a href="{{ url_for('executions.list_executions') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left"></i> Back to Executions
+    </a>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .spinning {
+        animation: spin 1.5s linear infinite;
+    }
+    @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+{% if not execution.is_terminal %}
+<script>
+    // Auto-refresh every 5 seconds while execution is in progress
+    setTimeout(function() { location.reload(); }, 5000);
+</script>
+{% endif %}
+{% endblock %}

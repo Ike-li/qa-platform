@@ -1,0 +1,80 @@
+# ============================================================
+# Python
+# ============================================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+eggs/
+*.whl
+.eggs/
+develop-eggs/
+sdist/
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+*.log
+
+# ============================================================
+# IDE / Editor
+# ============================================================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.settings/
+.classpath
+*.sublime-project
+*.sublime-workspace
+
+# ============================================================
+# Environment / Secrets
+# ============================================================
+.env
+.env.local
+.env.production
+.env.staging
+!.env.example
+
+# ============================================================
+# Docker
+# ============================================================
+docker-compose.override.yml
+
+# ============================================================
+# OS
+# ============================================================
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# ============================================================
+# Application
+# ============================================================
+/allure-reports/
+/allure-results/
+/data/
+/logs/
+*.db
+*.sqlite3
+
+# Migrations (auto-generated, but keep the directory)
+migrations/versions/*.py
+!migrations/versions/.gitkeep
