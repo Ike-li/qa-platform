@@ -1,5 +1,6 @@
 """Project CRUD tests with mocked Git operations."""
 
+import pytest
 from unittest.mock import patch
 
 from app.models.project import Project
@@ -134,7 +135,9 @@ class TestProjectEdit:
         assert project.name == "Updated Project"
         assert project.git_branch == "develop"
 
-    def test_edit_non_owner_visitor_forbidden(self, client, login_as_visitor, sample_project):
+    def test_edit_non_owner_visitor_forbidden(
+        self, client, login_as_visitor, sample_project
+    ):
         """Visitors who are not owners get 403."""
         resp = client.get(f"/projects/{sample_project.id}/edit", follow_redirects=False)
         assert resp.status_code == 403
@@ -186,7 +189,9 @@ class TestProjectGitOps:
         mock_delay.assert_called_once_with(sample_project.id, action="pull")
 
     @patch("app.projects.routes.discover_suites", return_value=[])
-    def test_discover_project(self, mock_discover, client, login_as_admin, sample_project):
+    def test_discover_project(
+        self, mock_discover, client, login_as_admin, sample_project
+    ):
         """Discover endpoint delegates to service."""
         resp = client.post(
             f"/projects/{sample_project.id}/discover",
@@ -195,10 +200,119 @@ class TestProjectGitOps:
         assert resp.status_code == 302
         mock_discover.assert_called_once()
 
-    def test_clone_requires_owner_or_admin(self, client, login_as_visitor, sample_project):
+    def test_clone_requires_owner_or_admin(
+        self, client, login_as_visitor, sample_project
+    ):
         """Visitors cannot clone a project."""
         resp = client.post(
             f"/projects/{sample_project.id}/clone",
             follow_redirects=False,
         )
         assert resp.status_code == 403
+
+
+class TestProjectCreateExtended:
+    """Extended create tests for credential handling."""
+
+    def test_create_with_credential(self, client, login_as_admin, db, app):
+        """Project creation with git_credential encrypts and stores it."""
+        from cryptography.fernet import Fernet
+
+        app.config["FERNET_KEY"] = Fernet.generate_key().decode()
+        resp = client.post(
+            "/projects/create",
+            data={
+                "name": "Cred Project",
+                "git_url": "https://github.com/example/cred-repo.git",
+                "git_branch": "main",
+                "description": "Project with credential",
+                "git_credential": "my-secret-token",
+            },
+            follow_redirects=False,
+        )
+        assert resp.status_code == 302
+
+        project = Project.query.filter_by(name="Cred Project").first()
+        assert project is not None
+        assert project.git_credential is not None
+        assert project.get_credential() == "my-secret-token"
+
+
+class TestProjectEditExtended:
+    """Extended edit tests for credential handling."""
+
+    def test_edit_with_credential(
+        self, client, login_as_admin, sample_project, db, app
+    ):
+        """Editing a project with git_credential encrypts and stores it."""
+        from cryptography.fernet import Fernet
+
+        app.config["FERNET_KEY"] = Fernet.generate_key().decode()
+        resp = client.post(
+            f"/projects/{sample_project.id}/edit",
+            data={
+                "name": "Test Project",
+                "git_url": "https://github.com/example/test-repo.git",
+                "git_branch": "main",
+                "description": "Updated",
+                "git_credential": "new-secret-token",
+            },
+            follow_redirects=False,
+        )
+        assert resp.status_code == 302
+
+        project = db.session.get(Project, sample_project.id)
+        assert project.get_credential() == "new-secret-token"
+
+
+class TestProjectDeleteExtended:
+    """Extended delete tests for error handling."""
+
+    def test_delete_commit_failure(self, client, login_as_admin, sample_project, db):
+        """Commit failure during delete triggers rollback and re-raises."""
+        with patch(
+            "app.extensions.db.session.commit", side_effect=Exception("db down")
+        ):
+            with pytest.raises(Exception, match="db down"):
+                client.post(
+                    f"/projects/{sample_project.id}/delete",
+                    follow_redirects=False,
+                )
+
+
+class TestProjectGitOpsExtended:
+    """Extended git ops tests for permission and error cases."""
+
+    def test_pull_forbidden_for_tester(self, client, login_as_tester, sample_project):
+        """Testers cannot pull a project (not owner/admin)."""
+        resp = client.post(
+            f"/projects/{sample_project.id}/pull",
+            follow_redirects=False,
+        )
+        assert resp.status_code == 403
+
+    def test_discover_forbidden_for_tester(
+        self, client, login_as_tester, sample_project
+    ):
+        """Testers cannot discover suites (not owner/admin)."""
+        resp = client.post(
+            f"/projects/{sample_project.id}/discover",
+            follow_redirects=False,
+        )
+        assert resp.status_code == 403
+
+    @patch(
+        "app.projects.routes.discover_suites",
+        side_effect=RuntimeError("discovery failed"),
+    )
+    def test_discover_runtime_error(
+        self, mock_discover, client, login_as_admin, sample_project
+    ):
+        """RuntimeError from discover_suites is caught and flashed."""
+        resp = client.post(
+            f"/projects/{sample_project.id}/discover",
+            follow_redirects=False,
+        )
+        assert resp.status_code == 302
+        # Verify redirect back to project detail
+        assert f"/projects/{sample_project.id}" in resp.headers["Location"]
