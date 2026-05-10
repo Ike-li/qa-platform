@@ -14,8 +14,9 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - run: pip install ruff
+      - run: pip install ruff pre-commit
       - run: ruff check app/ tests/ config.py manage.py
+      - run: pre-commit run --all-files
 
   test:
     runs-on: ubuntu-latest
@@ -31,7 +32,7 @@ jobs:
           python-version: "3.11"
           cache: pip
       - run: pip install -r requirements.txt
-      - run: pytest tests/ -q --tb=short --cov=app --cov-report=term-missing --cov-report=xml:coverage.xml --cov-fail-under=55
+      - run: pytest tests/ -q --tb=short --cov=app --cov-report=term-missing --cov-report=xml:coverage.xml --cov-fail-under=90
       - uses: actions/upload-artifact@v4
         if: always()
         with:

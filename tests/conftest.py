@@ -42,6 +42,110 @@ def _app():
     application.config["LOGIN_DISABLED"] = False
     application.config["SERVER_NAME"] = "localhost.localdomain"
 
+    # Pre-register test-only routes BEFORE any request is handled.
+    # Flask blocks route registration after the first request, so all
+    # routes that tests need must be declared here at session scope.
+    from flask import abort, jsonify
+
+    @application.route("/test-force-403")
+    def _test_force_403():
+        abort(403)
+
+    @application.route("/test-force-500")
+    def _test_force_500():
+        abort(500)
+
+    @application.route("/dec-audit-action")
+    def _dec_audit_action():
+        from app.utils.decorators import audit_log as _audit_log
+
+        @_audit_log("test.action")
+        def _view():
+            return jsonify({"ok": True})
+
+        return _view()
+
+    @application.route("/dec-resource/<resource_type>/<resource_id>")
+    def _dec_resource(resource_type, resource_id):
+        from app.utils.decorators import audit_log as _audit_log
+
+        @_audit_log("test.resource")
+        def _view():
+            return jsonify({"ok": True})
+
+        return _view()
+
+    @application.route("/dec-items/<int:id>")
+    def _dec_items(id):
+        from app.utils.decorators import audit_log as _audit_log
+
+        @_audit_log("test.item")
+        def _view():
+            return jsonify({"ok": True})
+
+        return _view()
+
+    @application.route("/dec-no-args")
+    def _dec_no_args():
+        from app.utils.decorators import audit_log as _audit_log
+
+        @_audit_log("test.noargs")
+        def _view():
+            return jsonify({"ok": True})
+
+        return _view()
+
+    @application.route("/dec-return-201")
+    def _dec_return_201():
+        from app.utils.decorators import audit_log as _audit_log
+
+        @_audit_log("test.return")
+        def _view():
+            return jsonify({"custom": "data"}), 201
+
+        return _view()
+
+    @application.route("/dec-fail-audit")
+    def _dec_fail_audit():
+        from app.utils.decorators import audit_log as _audit_log
+
+        @_audit_log("test.fail")
+        def _view():
+            return jsonify({"ok": True})
+
+        return _view()
+
+    @application.route("/dec-kwargs/<resource_type>")
+    def _dec_kwargs(resource_type):
+        from app.utils.decorators import audit_log as _audit_log
+
+        @_audit_log("test.kwargs")
+        def _view():
+            return jsonify({"ok": True})
+
+        return _view()
+
+    @application.route("/audit-ctx")
+    def _audit_ctx():
+        from app.utils.audit import log_audit
+
+        entry = log_audit(action="test.ctx")
+        return jsonify({"ip": entry.ip_address, "ua": entry.user_agent})
+
+    @application.route("/audit-ua-trunc")
+    def _audit_ua_trunc():
+        from app.utils.audit import log_audit
+
+        entry = log_audit(action="test.ua")
+        return jsonify({"ua": entry.user_agent})
+
+    @application.route("/audit-ip")
+    def _audit_ip():
+        from app.utils.audit import log_audit
+
+        entry = log_audit(action="test.ip")
+        return jsonify({"ip": entry.ip_address})
+
     with application.app_context():
         _db.create_all()
         yield application
@@ -130,7 +234,9 @@ def visitor_user(db):
 @pytest.fixture()
 def inactive_user(db):
     """An inactive user."""
-    return _create_user(db, "inactive", "inactive@test.com", "inactive123", Role.TESTER, is_active=False)
+    return _create_user(
+        db, "inactive", "inactive@test.com", "inactive123", Role.TESTER, is_active=False
+    )
 
 
 # ---------------------------------------------------------------------------

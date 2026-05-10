@@ -2,102 +2,85 @@
   "stories": [
     {
       "id": "US-001",
-      "title": "Fix extra_args command injection vulnerability",
+      "title": "CI/CD Pipeline (GitHub Actions)",
       "priority": 1,
       "passes": true,
       "acceptanceCriteria": [
-        "extra_args is parsed with shlex.split() and validated against a whitelist of allowed pytest flags",
-        "Disallowed flags raise ValueError and prevent execution",
-        "Allowed flags: -k, --timeout, -x, --tb, -v, -q, --co, --maxfail, -m"
+        ".github/workflows/ci.yml exists",
+        "Lint job uses ruff to check Python code",
+        "Test job runs pytest with SQLite (no MySQL needed)",
+        "Test job sets SECRET_KEY and FERNET_KEY env vars",
+        "Docker build job verifies Dockerfile builds successfully",
+        "Workflow triggers on push to main and pull requests",
+        "147 tests pass locally after changes"
       ],
-      "files": ["app/tasks/execution_tasks.py"]
+      "files": [".github/workflows/ci.yml"]
     },
     {
       "id": "US-002",
-      "title": "Enforce SECRET_KEY and FERNET_KEY from environment",
+      "title": "Celery Pipeline Integration Tests",
       "priority": 2,
       "passes": true,
       "acceptanceCriteria": [
-        "config.py raises ValueError on startup if SECRET_KEY is missing or set to 'change-me'",
-        "config.py raises ValueError on startup if FERNET_KEY is missing or empty",
-        "TestConfig exempt from this check",
-        ".env.example documents both keys with generation instructions"
+        "tests/test_pipeline_integration.py exists",
+        "CELERY_TASK_ALWAYS_EAGER=True configured in test fixture",
+        "test_pipeline_git_failure_stops_chain verifies PipelineAbort propagation",
+        "test_pipeline_status_transitions verifies pending→running→cloned→running→executed→completed",
+        "test_pipeline_slot_acquire_release verifies Redis slot lifecycle",
+        "test_pipeline_no_slot_fails_execution verifies no-slot path",
+        "Module-level _redis mocked via unittest.mock.patch",
+        "147 + new integration tests all pass"
       ],
-      "files": ["config.py"]
+      "files": ["tests/test_pipeline_integration.py"]
     },
     {
       "id": "US-003",
-      "title": "Add run_cron_schedule Celery task for Cron trigger",
+      "title": "MEDIUM Security Fixes (6 items)",
       "priority": 3,
       "passes": true,
       "acceptanceCriteria": [
-        "run_cron_schedule task exists in app/tasks/execution_tasks.py or schedule_tasks.py",
-        "Task accepts schedule_id, loads CronSchedule, calls prepare_execution with TriggerType.CRON",
-        "DatabaseScheduler entries reference the task name correctly",
-        "Cron schedule with is_active=True triggers execution when beat fires"
+        "dashboard.js has safeUrl() helper for href attributes",
+        "All href insertions in dashboard.js use safeUrl()",
+        "system_config.py _get_fernet() reads FERNET_KEY not SECRET_KEY",
+        "manage.py binds to 127.0.0.1 (not 0.0.0.0)",
+        "manage.py guards debug mode with env check",
+        "config.py has CELERY_TASK_PROTOCOL = 2",
+        "147 tests pass"
       ],
-      "files": ["app/tasks/execution_tasks.py", "app/tasks/scheduler.py", "app/tasks/schedule_tasks.py"]
+      "files": ["app/static/js/dashboard.js", "app/models/system_config.py", "manage.py", "config.py"]
     },
     {
       "id": "US-004",
-      "title": "Fix has_role string vs Role enum mismatch in templates",
+      "title": "Production Deployment Documentation",
       "priority": 4,
       "passes": true,
       "acceptanceCriteria": [
-        "User.has_role() accepts both Role enum and string arguments",
-        "base.html admin menu correctly visible for super_admin users",
-        "All has_role() calls in templates work correctly"
+        "docs/DEPLOYMENT.md exists",
+        "Covers prerequisites (Docker, Docker Compose)",
+        "Covers first-time setup with secrets generation commands",
+        "Covers flask db stamp head for existing databases",
+        "Covers environment variables reference",
+        "Covers Sandbox mode enablement (ENABLE_SANDBOX=true + build sandbox image)",
+        "Covers HTTPS setup instructions",
+        "Notes Fernet key migration for existing encrypted values"
       ],
-      "files": ["app/models/user.py", "app/templates/base.html"]
+      "files": ["docs/DEPLOYMENT.md"]
     },
     {
       "id": "US-005",
-      "title": "Add RBAC permission check to API execution endpoint",
+      "title": "docker-compose.prod.yml Sync",
       "priority": 5,
       "passes": true,
       "acceptanceCriteria": [
-        "POST /api/v1/executions checks execution.trigger permission",
-        "Visitor-role user with API token gets 403",
-        "Tester/Project_lead/Super_admin can trigger via API"
+        "docker-compose.prod.yml has docker-proxy service",
+        "docker-compose.prod.yml has Redis requirepass",
+        "docker-compose.prod.yml worker has /data/repos, /data/venvs, /data/execution_results volumes",
+        "docker-compose.prod.yml worker has ENABLE_SANDBOX env var",
+        "docker-compose.prod.yml worker depends_on web with health check",
+        "docker-compose.prod.yml worker has DOCKER_HOST pointing to docker-proxy",
+        "147 tests pass"
       ],
-      "files": ["app/api/executions.py"]
-    },
-    {
-      "id": "US-006",
-      "title": "Add rollback protection to route commits",
-      "priority": 6,
-      "passes": true,
-      "acceptanceCriteria": [
-        "All db.session.commit() calls in route handlers are wrapped in try/except",
-        "On IntegrityError or other DB error, session is rolled back before re-raising",
-        "Affected files: auth/routes.py, projects/routes.py, executions/routes.py"
-      ],
-      "files": ["app/auth/routes.py", "app/projects/routes.py", "app/executions/routes.py"]
-    },
-    {
-      "id": "US-007",
-      "title": "Add @celery.task decorator to send_notification",
-      "priority": 7,
-      "passes": true,
-      "acceptanceCriteria": [
-        "send_notification has @celery.task decorator with bind=True, max_retries=3",
-        "Task uses self.retry() for retryable failures",
-        "Task is properly registered and callable via .delay()"
-      ],
-      "files": ["app/tasks/notification_tasks.py"]
-    },
-    {
-      "id": "US-008",
-      "title": "Add rate limiting to login endpoint",
-      "priority": 8,
-      "passes": true,
-      "acceptanceCriteria": [
-        "Login endpoint limits to 5 failed attempts per IP per minute",
-        "Rate limit uses Redis counter",
-        "Exceeded limit returns 429 with retry-after message",
-        "Successful login resets the counter"
-      ],
-      "files": ["app/auth/routes.py"]
+      "files": ["docker-compose.prod.yml"]
     }
   ]
 }
