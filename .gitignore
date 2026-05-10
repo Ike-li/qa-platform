@@ -82,7 +82,6 @@ Desktop.ini
 .omx/
 .pre-commit-config.yaml
 docs/SESSION_TIMELINE.md
-test-repo-template/
 
 # Migrations (auto-generated, but keep the directory)
 migrations/versions/*.py
