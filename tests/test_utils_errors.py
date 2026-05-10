@@ -53,6 +53,24 @@ def error_app():
     def _t_app_err_404():
         raise NotFoundError()
 
+    @app.route("/test-force-500")
+    def _t500():
+        abort(500)
+
+    @app.route("/test-force-403")
+    def _t403():
+        from app.utils.errors import ForbiddenError
+
+        raise ForbiddenError()
+
+    @app.route("/test-force-403-raw")
+    def _t403_raw():
+        abort(403)
+
+    @app.route("/test-force-404")
+    def _t404():
+        abort(404)
+
     return app
 
 
@@ -276,4 +294,69 @@ class TestAppErrorHandler:
                 resp = client.get(
                     "/test-force-app-error-404", headers={"Accept": "text/html"}
                 )
+        assert resp.status_code == 404
+
+    def test_app_error_418_browser_returns_json(self, error_app):
+        """AppError(418) with Accept: text/html — falls through to jsonify."""
+        with error_app.test_client() as client:
+            resp = client.get("/test-force-app-error", headers={"Accept": "text/html"})
+        assert resp.status_code == 418
+        data = resp.get_json()
+        assert data["error"] == "AppError"
+        assert data["message"] == "custom"
+
+
+class Test500Handler:
+    def test_500_json(self, error_app):
+        with error_app.test_client() as client:
+            resp = client.get("/test-force-500", headers={"Accept": "application/json"})
+        assert resp.status_code == 500
+        data = resp.get_json()
+        assert data["error"] == "Internal Server Error"
+
+    def test_500_html(self, error_app):
+        with error_app.test_client() as client:
+            with patch(
+                "app.utils.errors.render_template", return_value="<html>500</html>"
+            ):
+                resp = client.get("/test-force-500", headers={"Accept": "text/html"})
+        assert resp.status_code == 500
+
+
+class Test403Handler:
+    def test_403_json_api(self, error_app):
+        with error_app.test_client() as client:
+            resp = client.get(
+                "/test-force-403-raw", headers={"Accept": "application/json"}
+            )
+        assert resp.status_code == 403
+        data = resp.get_json()
+        assert data["error"] == "Forbidden"
+
+    def test_403_html_browser(self, error_app):
+        with error_app.test_client() as client:
+            with patch(
+                "app.utils.errors.render_template", return_value="<html>403</html>"
+            ):
+                resp = client.get(
+                    "/test-force-403-raw", headers={"Accept": "text/html"}
+                )
+        assert resp.status_code == 403
+
+
+class Test404Handler:
+    def test_404_json_api(self, error_app):
+        with error_app.test_client() as client:
+            resp = client.get("/test-force-404", headers={"Accept": "application/json"})
+        assert resp.status_code == 404
+        data = resp.get_json()
+        assert data["error"] == "Not Found"
+        assert "resource" in data["message"].lower()
+
+    def test_404_html_browser(self, error_app):
+        with error_app.test_client() as client:
+            with patch(
+                "app.utils.errors.render_template", return_value="<html>404</html>"
+            ):
+                resp = client.get("/test-force-404", headers={"Accept": "text/html"})
         assert resp.status_code == 404

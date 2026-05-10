@@ -4,11 +4,10 @@ Covers: Execution, SystemConfig, CronSchedule, ApiToken, User, Notification,
 AuditLog, AllureReport, DashboardMetric, TestResult models.
 """
 
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
+from unittest.mock import patch
 
-import pytest
 
-from app.extensions import db
 from app.models.allure_report import AllureReport
 from app.models.api_token import ApiToken
 from app.models.audit_log import AuditLog
@@ -31,10 +30,9 @@ from app.models.system_config import (
     SystemConfig,
     _decrypt,
     _encrypt,
-    _get_fernet,
 )
 from app.models.test_result import TestResult, TestResultStatus
-from app.models.user import ROLE_PERMISSIONS, Role, User
+from app.models.user import ROLE_PERMISSIONS, Role
 
 
 # ============================================================================
@@ -50,25 +48,44 @@ class TestExecutionStageIndicator:
         return e
 
     def test_pending(self):
-        assert self._exec_with_status(ExecutionStatus.PENDING).stage_indicator == "Queued"
+        assert (
+            self._exec_with_status(ExecutionStatus.PENDING).stage_indicator == "Queued"
+        )
 
     def test_cloned(self):
-        assert self._exec_with_status(ExecutionStatus.CLONED).stage_indicator == "Git Synced"
+        assert (
+            self._exec_with_status(ExecutionStatus.CLONED).stage_indicator
+            == "Git Synced"
+        )
 
     def test_running(self):
-        assert self._exec_with_status(ExecutionStatus.RUNNING).stage_indicator == "Running Tests"
+        assert (
+            self._exec_with_status(ExecutionStatus.RUNNING).stage_indicator
+            == "Running Tests"
+        )
 
     def test_executed(self):
-        assert self._exec_with_status(ExecutionStatus.EXECUTED).stage_indicator == "Tests Complete"
+        assert (
+            self._exec_with_status(ExecutionStatus.EXECUTED).stage_indicator
+            == "Tests Complete"
+        )
 
     def test_completed(self):
-        assert self._exec_with_status(ExecutionStatus.COMPLETED).stage_indicator == "Report Generated"
+        assert (
+            self._exec_with_status(ExecutionStatus.COMPLETED).stage_indicator
+            == "Report Generated"
+        )
 
     def test_failed(self):
-        assert self._exec_with_status(ExecutionStatus.FAILED).stage_indicator == "Failed"
+        assert (
+            self._exec_with_status(ExecutionStatus.FAILED).stage_indicator == "Failed"
+        )
 
     def test_timeout(self):
-        assert self._exec_with_status(ExecutionStatus.TIMEOUT).stage_indicator == "Timed Out"
+        assert (
+            self._exec_with_status(ExecutionStatus.TIMEOUT).stage_indicator
+            == "Timed Out"
+        )
 
     def test_unknown_status_returns_unknown(self):
         e = Execution(project_id=1)
@@ -112,25 +129,45 @@ class TestExecutionStatusBadgeClass:
         return Execution(project_id=1, status=status)
 
     def test_pending_secondary(self):
-        assert self._exec_with_status(ExecutionStatus.PENDING).status_badge_class == "secondary"
+        assert (
+            self._exec_with_status(ExecutionStatus.PENDING).status_badge_class
+            == "secondary"
+        )
 
     def test_cloned_info(self):
-        assert self._exec_with_status(ExecutionStatus.CLONED).status_badge_class == "info"
+        assert (
+            self._exec_with_status(ExecutionStatus.CLONED).status_badge_class == "info"
+        )
 
     def test_running_primary(self):
-        assert self._exec_with_status(ExecutionStatus.RUNNING).status_badge_class == "primary"
+        assert (
+            self._exec_with_status(ExecutionStatus.RUNNING).status_badge_class
+            == "primary"
+        )
 
     def test_executed_primary(self):
-        assert self._exec_with_status(ExecutionStatus.EXECUTED).status_badge_class == "primary"
+        assert (
+            self._exec_with_status(ExecutionStatus.EXECUTED).status_badge_class
+            == "primary"
+        )
 
     def test_completed_success(self):
-        assert self._exec_with_status(ExecutionStatus.COMPLETED).status_badge_class == "success"
+        assert (
+            self._exec_with_status(ExecutionStatus.COMPLETED).status_badge_class
+            == "success"
+        )
 
     def test_failed_danger(self):
-        assert self._exec_with_status(ExecutionStatus.FAILED).status_badge_class == "danger"
+        assert (
+            self._exec_with_status(ExecutionStatus.FAILED).status_badge_class
+            == "danger"
+        )
 
     def test_timeout_warning(self):
-        assert self._exec_with_status(ExecutionStatus.TIMEOUT).status_badge_class == "warning"
+        assert (
+            self._exec_with_status(ExecutionStatus.TIMEOUT).status_badge_class
+            == "warning"
+        )
 
     def test_unknown_falls_back_to_secondary(self):
         e = Execution(project_id=1)
@@ -361,13 +398,16 @@ class TestSystemConfigEncryptionHelpers:
 
     def _reset_fernet_cache(self):
         import app.models.system_config as scm
+
         scm._fernet = None
 
     def test_get_fernet_returns_instance_with_valid_key(self, app, db):
         from cryptography.fernet import Fernet
         import app.models.system_config as scm
+
         key = Fernet.generate_key().decode()
         import os
+
         old_key = os.environ.get("FERNET_KEY")
         os.environ["FERNET_KEY"] = key
         self._reset_fernet_cache()
@@ -384,6 +424,7 @@ class TestSystemConfigEncryptionHelpers:
     def test_get_fernet_returns_none_without_key(self, app, db):
         import os
         import app.models.system_config as scm
+
         old_key = os.environ.pop("FERNET_KEY", None)
         self._reset_fernet_cache()
         try:
@@ -397,8 +438,10 @@ class TestSystemConfigEncryptionHelpers:
     def test_get_fernet_caches(self, app, db):
         from cryptography.fernet import Fernet
         import app.models.system_config as scm
+
         key = Fernet.generate_key().decode()
         import os
+
         old_key = os.environ.get("FERNET_KEY")
         os.environ["FERNET_KEY"] = key
         self._reset_fernet_cache()
@@ -417,6 +460,7 @@ class TestSystemConfigEncryptionHelpers:
         from cryptography.fernet import Fernet
         import os
         import app.models.system_config as scm
+
         key = Fernet.generate_key().decode()
         old_key = os.environ.get("FERNET_KEY")
         os.environ["FERNET_KEY"] = key
@@ -437,6 +481,7 @@ class TestSystemConfigEncryptionHelpers:
     def test_encrypt_passthrough_when_no_fernet(self, app, db):
         import os
         import app.models.system_config as scm
+
         old_key = os.environ.pop("FERNET_KEY", None)
         self._reset_fernet_cache()
         try:
@@ -451,6 +496,7 @@ class TestSystemConfigEncryptionHelpers:
         from cryptography.fernet import Fernet
         import os
         import app.models.system_config as scm
+
         key = Fernet.generate_key().decode()
         old_key = os.environ.get("FERNET_KEY")
         os.environ["FERNET_KEY"] = key
@@ -580,8 +626,10 @@ class TestCronScheduleCelerySchedule:
 class TestCronScheduleRepr:
     def test_repr(self, app, db, admin_user, sample_project):
         cs = CronSchedule(
-            id=1, project_id=sample_project.id,
-            cron_expr="0 0 * * *", is_active=True,
+            id=1,
+            project_id=sample_project.id,
+            cron_expr="0 0 * * *",
+            is_active=True,
         )
         assert "CronSchedule" in repr(cs)
         assert "0 0 * * *" in repr(cs)
@@ -660,7 +708,9 @@ class TestApiTokenVerifyToken:
         from unittest.mock import patch
 
         naive_past = datetime(2020, 1, 1, 0, 0, 0)  # long ago
-        model, raw = ApiToken.create_token(admin_user.id, "test-exp", expires_at=naive_past)
+        model, raw = ApiToken.create_token(
+            admin_user.id, "test-exp", expires_at=naive_past
+        )
         naive_now = datetime(2025, 6, 1, 0, 0, 0)  # after naive_past
         with patch("app.models.api_token.datetime") as mock_dt:
             mock_dt.now.return_value = naive_now
@@ -691,6 +741,7 @@ class TestApiTokenProperties:
 
     def test_is_expired_false_future(self, app, db, admin_user):
         from unittest.mock import patch
+
         future = datetime(2099, 1, 1, 0, 0, 0)  # far future, naive (SQLite strips tz)
         model, _ = ApiToken.create_token(admin_user.id, "t4", expires_at=future)
         with patch("app.models.api_token.datetime") as mock_dt:
@@ -700,6 +751,7 @@ class TestApiTokenProperties:
 
     def test_is_expired_true_past(self, app, db, admin_user):
         from unittest.mock import patch
+
         past = datetime(2020, 1, 1, 0, 0, 0)  # far past, naive (SQLite strips tz)
         model, _ = ApiToken.create_token(admin_user.id, "t5", expires_at=past)
         with patch("app.models.api_token.datetime") as mock_dt:
@@ -845,13 +897,21 @@ class TestUserHasProjectPermission:
         assert admin_user.has_project_permission("any.perm", sample_project.id) is True
 
     def test_no_membership_not_owner(self, app, db, tester_user, sample_project):
-        assert tester_user.has_project_permission("execution.trigger", sample_project.id) is False
+        assert (
+            tester_user.has_project_permission("execution.trigger", sample_project.id)
+            is False
+        )
 
     def test_owner_grants_permission(self, app, db, admin_user, sample_project):
         # admin_user is the owner via sample_project fixture
-        assert admin_user.has_project_permission("execution.trigger", sample_project.id) is True
+        assert (
+            admin_user.has_project_permission("execution.trigger", sample_project.id)
+            is True
+        )
 
-    def test_membership_with_matching_permission(self, app, db, tester_user, sample_project):
+    def test_membership_with_matching_permission(
+        self, app, db, tester_user, sample_project
+    ):
         pm = ProjectMembership(
             user_id=tester_user.id,
             project_id=sample_project.id,
@@ -859,9 +919,14 @@ class TestUserHasProjectPermission:
         )
         db.session.add(pm)
         db.session.commit()
-        assert tester_user.has_project_permission("execution.view", sample_project.id) is True
+        assert (
+            tester_user.has_project_permission("execution.view", sample_project.id)
+            is True
+        )
 
-    def test_membership_without_matching_permission(self, app, db, tester_user, sample_project):
+    def test_membership_without_matching_permission(
+        self, app, db, tester_user, sample_project
+    ):
         pm = ProjectMembership(
             user_id=tester_user.id,
             project_id=sample_project.id,
@@ -869,7 +934,12 @@ class TestUserHasProjectPermission:
         )
         db.session.add(pm)
         db.session.commit()
-        assert tester_user.has_project_permission("project.members.manage", sample_project.id) is False
+        assert (
+            tester_user.has_project_permission(
+                "project.members.manage", sample_project.id
+            )
+            is False
+        )
 
 
 class TestUserRepr:
@@ -895,7 +965,8 @@ class TestNotificationConfigRepr:
 class TestNotificationLogRepr:
     def test_repr(self):
         log = NotificationLog(
-            id=1, execution_id=10,
+            id=1,
+            execution_id=10,
             channel=NotificationChannel.DINGTALK,
             status=NotificationDeliveryStatus.SENT,
         )
@@ -907,7 +978,13 @@ class TestNotificationLogRepr:
 
 class TestAuditLogRepr:
     def test_repr(self):
-        entry = AuditLog(id=1, action="user.login", username="admin", resource_type="user", resource_id="1")
+        entry = AuditLog(
+            id=1,
+            action="user.login",
+            username="admin",
+            resource_type="user",
+            resource_id="1",
+        )
         r = repr(entry)
         assert "user.login" in r
         assert "admin" in r
@@ -915,7 +992,9 @@ class TestAuditLogRepr:
 
 class TestAllureReportRepr:
     def test_repr(self):
-        report = AllureReport(execution_id=42, report_path="/tmp/report", report_url="/reports/42")
+        report = AllureReport(
+            execution_id=42, report_path="/tmp/report", report_url="/reports/42"
+        )
         r = repr(report)
         assert "42" in r
 
@@ -994,3 +1073,65 @@ class TestProjectRolePermissionsCompleteness:
         perms = PROJECT_ROLE_PERMISSIONS[ProjectRole.VIEWER]
         assert "project.settings" not in perms
         assert "execution.view" in perms
+
+
+# ============================================================================
+# Step 7: Project model edge cases
+# ============================================================================
+
+
+class TestProjectModel:
+    def test_set_credential_empty_clears(self, app, db, admin_user):
+        p = Project(
+            name="cred-test",
+            git_url="https://example.com/repo.git",
+            owner_id=admin_user.id,
+        )
+        db.session.add(p)
+        db.session.commit()
+        p.set_credential("")
+        assert p.git_credential is None
+
+    def test_get_credential_invalid_token_returns_none(self, app, db, admin_user):
+        p = Project(
+            name="bad-cred",
+            git_url="https://example.com/repo.git",
+            owner_id=admin_user.id,
+        )
+        db.session.add(p)
+        db.session.commit()
+        p.git_credential = "not-a-valid-fernet-token"
+        assert p.get_credential() is None
+
+    def test_repr(self, app, db, admin_user):
+        p = Project(
+            name="repr-test",
+            git_url="https://example.com/repo.git",
+            owner_id=admin_user.id,
+        )
+        db.session.add(p)
+        db.session.commit()
+        assert "repr-test" in repr(p)
+        assert str(p.id) in repr(p)
+
+
+# ============================================================================
+# Step 8: CronSchedule edge cases
+# ============================================================================
+
+
+class TestCronScheduleEdgeCases:
+    def test_validate_cron_expr_field_parse_error(self):
+        """Expression '1-- 0 * * *' passes regex but _parse_field raises ValueError."""
+        assert CronSchedule.validate_cron_expr("1-- 0 * * *") is False
+
+    def test_celery_schedule_exception_returns_none(
+        self, app, db, admin_user, sample_project
+    ):
+        cs = CronSchedule(project_id=sample_project.id, cron_expr="0 0 * * *")
+        db.session.add(cs)
+        db.session.commit()
+        with patch(
+            "app.models.cron_schedule.celery_crontab", side_effect=ValueError("boom")
+        ):
+            assert cs.celery_schedule is None
