@@ -75,6 +75,15 @@ Desktop.ini
 *.db
 *.sqlite3
 
+# ============================================================
+# OMC / Agent State
+# ============================================================
+.omc/
+.omx/
+.pre-commit-config.yaml
+docs/SESSION_TIMELINE.md
+test-repo-template/
+
 # Migrations (auto-generated, but keep the directory)
 migrations/versions/*.py
 !migrations/versions/.gitkeep
